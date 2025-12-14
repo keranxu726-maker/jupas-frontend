@@ -1,6 +1,6 @@
 .btn {
   padding: 10px 20px;
-  border: 1px solid var(--color-primary);
+  border: 1.5px solid var(--color-primary);
   background: transparent;
   color: var(--color-primary);
   font-size: 14px;
@@ -12,8 +12,9 @@
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--color-primary);
-  color: #ffffff;
+  background: var(--color-primary-light);
+  color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
   transform: translateY(-1px);
   box-shadow: var(--box-shadow);
 }

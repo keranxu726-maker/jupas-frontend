@@ -26,10 +26,13 @@ body {
   --color-text-primary: #1E293B;
   --color-text-secondary: #64748B;
   
-  /* 系统色 */
+  /* 系统状态色 */
   --color-success: #10B981;
+  --color-success-bg: #D1FAE5;
   --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
   --color-danger: #EF4444;
+  --color-danger-bg: #FEE2E2;
   
   /* 背景色 */
   --color-bg-page: #F8FAFC;

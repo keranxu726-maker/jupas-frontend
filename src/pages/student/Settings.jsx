@@ -65,7 +65,7 @@ const Settings = () => {
         
         <div className="settings-card">
           <div className="card-header">
-            <h3>重置密码</h3>
+            <h3>🔒 重置密码</h3>
           </div>
           <div className="card-body">
             <form onSubmit={handleSubmit}>

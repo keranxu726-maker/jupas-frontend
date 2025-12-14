@@ -143,14 +143,14 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
+  background: var(--color-bg-card);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--border-radius-lg);
 }
 
 .empty-state p {
   font-size: 16px;
-  color: var(--color-secondary);
+  color: var(--color-text-secondary);
   margin-bottom: 20px;
 }
 
