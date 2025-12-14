@@ -1,0 +1,115 @@
+.grade-input-page {
+  min-height: 100vh;
+  background: var(--color-bg-light);
+}
+
+.page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.grade-card {
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-bottom: 24px;
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.subject-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.subject-row:last-child {
+  margin-bottom: 0;
+}
+
+.subject-name {
+  flex: 1;
+  font-size: 14px;
+}
+
+.subject-grade {
+  width: 120px;
+}
+
+.subject-grade .select-wrapper {
+  margin-bottom: 0;
+}
+
+.remove-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  border-radius: var(--border-radius);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-secondary);
+  transition: all 0.2s;
+}
+
+.remove-btn:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+.add-subject-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.add-subject-row .select-wrapper {
+  margin-bottom: 0;
+}
+
+.calculate-section {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.hint-text {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--color-secondary);
+}
+
+.error-message {
+  text-align: center;
+  color: var(--color-primary);
+  font-size: 14px;
+  padding: 12px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  margin-top: 16px;
+}
+
