@@ -7,28 +7,34 @@
   margin-bottom: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-primary);
+  color: var(--color-text-primary);
 }
 
 .select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
+  padding: 10px 14px;
+  border: 1.5px solid var(--color-border);
   border-radius: var(--border-radius);
   font-size: 14px;
-  background: var(--color-bg-white);
-  color: var(--color-primary);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+}
+
+.select:hover {
+  border-color: var(--color-border-hover);
 }
 
 .select:focus {
   outline: none;
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .select:disabled {
   background: var(--color-bg-light);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 

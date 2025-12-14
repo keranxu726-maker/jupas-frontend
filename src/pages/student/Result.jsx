@@ -52,10 +52,10 @@ const Result = () => {
 
   const getSuccessRateColor = (rate) => {
     switch (rate) {
-      case 'high': return '#000000';
-      case 'medium': return '#666666';
-      case 'low': return '#999999';
-      default: return '#000000';
+      case 'high': return '#10B981';
+      case 'medium': return '#F59E0B';
+      case 'low': return '#EF4444';
+      default: return '#64748B';
     }
   };
 

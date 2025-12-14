@@ -1,22 +1,23 @@
 .result-page {
   min-height: 100vh;
-  background: var(--color-bg-light);
+  background: var(--color-bg-page);
 }
 
 .result-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
 .total-score {
-  font-size: 18px;
-  font-weight: 600;
-  margin-top: 12px;
-  padding: 12px 24px;
-  background: var(--color-primary);
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 16px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
   color: #ffffff;
   display: inline-block;
-  border-radius: var(--border-radius);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .filter-section {
@@ -34,15 +35,18 @@
 }
 
 .program-card {
-  background: var(--color-bg-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  padding: 20px;
-  transition: box-shadow 0.2s;
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .program-card:hover {
-  box-shadow: var(--box-shadow);
+  box-shadow: var(--box-shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--color-primary-light);
 }
 
 .program-header {
@@ -64,12 +68,16 @@
   font-size: 24px;
   cursor: pointer;
   color: var(--color-border);
-  transition: color 0.2s;
+  transition: all 0.2s ease;
 }
 
-.favorite-btn:hover,
+.favorite-btn:hover {
+  color: var(--color-warning);
+  transform: scale(1.2);
+}
+
 .favorite-btn.favorited {
-  color: var(--color-primary);
+  color: var(--color-warning);
 }
 
 .program-name {
