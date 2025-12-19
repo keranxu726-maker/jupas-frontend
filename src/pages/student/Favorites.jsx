@@ -28,12 +28,51 @@ const Favorites = () => {
     loadFavorites();
   };
 
+  const handleExport = () => {
+    if (programs.length === 0) return;
+    
+    let content = '我的收藏专业列表\n';
+    content += '==========================================\n\n';
+    
+    programs.forEach((program, index) => {
+      content += `${index + 1}. ${program.school} - ${program.program}\n`;
+      content += `   专业代码: ${program.id}\n`;
+      content += `   往年录取分:\n`;
+      content += `     最高分: ${program.historyScore.max}\n`;
+      content += `     最低分: ${program.historyScore.min}\n`;
+      content += `     中位数: ${program.historyScore.median}\n`;
+      content += `   总分要求: ${program.totalScore}\n`;
+      content += '\n';
+    });
+    
+    content += '==========================================\n';
+    content += `导出时间: ${new Date().toLocaleString('zh-CN')}\n`;
+    content += `总计: ${programs.length} 个专业\n`;
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `我的收藏专业_${new Date().getTime()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="favorites-page">
       <Navbar />
       
       <div className="page-container">
-        <h2 className="page-title">我的收藏</h2>
+        <div className="favorites-header">
+          <h2 className="page-title">我的收藏</h2>
+          {programs.length > 0 && (
+            <Button onClick={handleExport}>
+              📥 导出收藏
+            </Button>
+          )}
+        </div>
         
         {loading ? (
           <div className="loading-state">加载中...</div>
@@ -86,4 +125,9 @@ const Favorites = () => {
 };
 
 export default Favorites;
+
+
+
+
+
 

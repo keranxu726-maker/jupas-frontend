@@ -16,6 +16,8 @@ const Accounts = () => {
     role: 'student',
     points: 10
   });
+  const [excelFile, setExcelFile] = useState(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   useEffect(() => {
     loadAccounts();
@@ -78,11 +80,47 @@ const Accounts = () => {
     }
   };
 
+  const handleExcelUpload = () => {
+    setUploadModalOpen(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setExcelFile(file);
+    }
+  };
+
+  const handleBatchImport = async () => {
+    if (!excelFile) {
+      alert('请选择Excel文件');
+      return;
+    }
+
+    // 模拟处理Excel文件
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        // 这里应该解析Excel，暂时模拟批量添加
+        alert('Excel批量导入功能需要后端支持。\n\n格式要求：\n列1: 账号名称\n列2: 登录密码\n列3: 权益点数（仅学生账号）');
+        
+        setUploadModalOpen(false);
+        setExcelFile(null);
+      } catch (error) {
+        alert('文件解析失败，请检查文件格式');
+      }
+    };
+    reader.readAsArrayBuffer(excelFile);
+  };
+
   return (
     <div className="accounts-section">
       <div className="section-header">
         <h2>账号管理</h2>
-        <Button onClick={handleAdd}>+ 新增账号</Button>
+        <div className="header-actions">
+          <Button type="secondary" onClick={handleExcelUpload}>📊 Excel批量导入</Button>
+          <Button onClick={handleAdd}>+ 新增账号</Button>
+        </div>
       </div>
       
       <div className="tabs">
@@ -175,9 +213,77 @@ const Accounts = () => {
           </Button>
         </div>
       </Modal>
+      
+      <Modal
+        isOpen={uploadModalOpen}
+        onClose={() => {
+          setUploadModalOpen(false);
+          setExcelFile(null);
+        }}
+        title="Excel批量导入账号"
+      >
+        <div style={{ marginBottom: '20px' }}>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+            请上传包含账号信息的Excel文件
+          </p>
+          <div style={{ 
+            padding: '16px', 
+            background: 'var(--color-bg-light)', 
+            borderRadius: 'var(--border-radius)',
+            marginBottom: '16px'
+          }}>
+            <p style={{ fontSize: '13px', marginBottom: '8px', fontWeight: '600' }}>文件格式要求：</p>
+            <ul style={{ fontSize: '13px', color: 'var(--color-text-secondary)', paddingLeft: '20px', margin: 0 }}>
+              <li>第1列：账号名称</li>
+              <li>第2列：登录密码</li>
+              {activeTab === 'student' && <li>第3列：权益点数（数字）</li>}
+            </ul>
+          </div>
+          
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileChange}
+            style={{
+              width: '100%',
+              padding: '10px',
+              border: '1.5px dashed var(--color-border)',
+              borderRadius: 'var(--border-radius)',
+              cursor: 'pointer'
+            }}
+          />
+          
+          {excelFile && (
+            <p style={{ 
+              marginTop: '12px', 
+              fontSize: '13px', 
+              color: 'var(--color-success)' 
+            }}>
+              ✓ 已选择文件：{excelFile.name}
+            </p>
+          )}
+        </div>
+        
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <Button type="secondary" onClick={() => {
+            setUploadModalOpen(false);
+            setExcelFile(null);
+          }}>
+            取消
+          </Button>
+          <Button type="primary" onClick={handleBatchImport}>
+            开始导入
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 export default Accounts;
+
+
+
+
+
 

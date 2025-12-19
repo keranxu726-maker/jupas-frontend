@@ -20,3 +20,8 @@ const Input = ({ type = 'text', value, onChange, placeholder, disabled = false, 
 
 export default Input;
 
+
+
+
+
+

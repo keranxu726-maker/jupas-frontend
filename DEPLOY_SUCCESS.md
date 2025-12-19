@@ -148,3 +148,8 @@ ssh admin@112.124.68.82 "cd ~/jupas-frontend && git pull && source ~/.nvm/nvm.sh
 
 **部署完成！祝使用愉快！** 🚀
 
+
+
+
+
+

@@ -3,11 +3,45 @@
   background: var(--color-bg-page);
 }
 
+.page-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.favorites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;
   font-size: 16px;
   color: var(--color-text-secondary);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  background: var(--color-bg-card);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--border-radius-lg);
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
 }
 
 .favorites-list {

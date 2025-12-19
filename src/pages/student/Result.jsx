@@ -10,7 +10,7 @@ import './Result.css';
 const Result = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { totalScore, programs = [] } = location.state || {};
+  const { totalScore, programs = [], grades } = location.state || {};
   
   const [schoolFilter, setSchoolFilter] = useState('');
   const [programFilter, setProgramFilter] = useState('');
@@ -77,10 +77,37 @@ const Result = () => {
       <Navbar />
       
       <div className="page-container">
-        <div className="result-header">
-          <h2 className="page-title">计算结果</h2>
-          <div className="total-score">您的总分：{totalScore}</div>
-        </div>
+        <h2 className="page-title">计算结果</h2>
+        
+        {grades && (
+          <div className="grades-summary">
+            <div className="grades-section">
+              <h4>必选科目</h4>
+              <div className="grades-list">
+                {grades.required && Object.entries(grades.required).map(([subject, grade]) => (
+                  <div key={subject} className="grade-item">
+                    <span className="grade-subject">{subject}</span>
+                    <span className="grade-value">{grade}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {grades.elective && grades.elective.length > 0 && (
+              <div className="grades-section">
+                <h4>选修科目</h4>
+                <div className="grades-list">
+                  {grades.elective.map((item, index) => (
+                    <div key={index} className="grade-item">
+                      <span className="grade-subject">{item.subject}</span>
+                      <span className="grade-value">{item.grade}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="filter-section">
           <Input
@@ -121,7 +148,7 @@ const Result = () => {
                 
                 <div className="program-scores">
                   <div className="score-item">
-                    <div className="score-label">总分要求</div>
+                    <div className="score-label">总分</div>
                     <div className="score-value">{program.totalScore}</div>
                   </div>
                   

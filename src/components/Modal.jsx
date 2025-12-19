@@ -21,3 +21,8 @@ const Modal = ({ isOpen, onClose, title, children, width = '500px' }) => {
 
 export default Modal;
 
+
+
+
+
+

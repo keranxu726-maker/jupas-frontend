@@ -70,7 +70,15 @@ const GradeInput = () => {
     setLoading(false);
 
     if (result.success) {
-      navigate('/student/result', { state: result.data });
+      navigate('/student/result', { 
+        state: { 
+          ...result.data,
+          grades: {
+            required: requiredGrades,
+            elective: electiveSubjects
+          }
+        } 
+      });
     } else {
       setError(result.message);
     }
@@ -80,7 +88,25 @@ const GradeInput = () => {
     <div className="grade-input-page">
       <Navbar />
       
-      <div className="page-container">
+      <div className="page-layout">
+        <aside className="sidebar">
+          <div 
+            className="sidebar-item"
+            onClick={() => navigate('/student/favorites')}
+          >
+            <span className="sidebar-icon">⭐</span>
+            <span className="sidebar-text">我的收藏</span>
+          </div>
+          <div 
+            className="sidebar-item"
+            onClick={() => navigate('/student/settings')}
+          >
+            <span className="sidebar-icon">⚙️</span>
+            <span className="sidebar-text">系统设置</span>
+          </div>
+        </aside>
+        
+        <div className="page-container">
         <h2 className="page-title">成绩输入</h2>
         
         <div className="grade-card">
@@ -123,8 +149,9 @@ const GradeInput = () => {
                 <button 
                   className="remove-btn"
                   onClick={() => handleRemoveElective(index)}
+                  title="删除科目"
                 >
-                  ×
+                  🗑️
                 </button>
               </div>
             ))}
@@ -161,9 +188,15 @@ const GradeInput = () => {
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 };
 
 export default GradeInput;
+
+
+
+
+
 

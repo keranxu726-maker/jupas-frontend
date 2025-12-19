@@ -3,6 +3,87 @@
   background: var(--color-bg-page);
 }
 
+.page-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.page-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--color-primary);
+  margin: 16px auto;
+  border-radius: 2px;
+}
+
+.grades-summary {
+  background: var(--color-bg-card);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: var(--box-shadow);
+}
+
+.grades-section {
+  margin-bottom: 20px;
+}
+
+.grades-section:last-child {
+  margin-bottom: 0;
+}
+
+.grades-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--color-bg-light);
+}
+
+.grades-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.grade-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--color-bg-light);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+}
+
+.grade-subject {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.grade-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary);
+  padding: 4px 12px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 6px;
+}
+
 .result-header {
   text-align: center;
   margin-bottom: 32px;
@@ -59,7 +140,15 @@
 .program-school {
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.program-school::before {
+  content: '🏫';
+  font-size: 18px;
 }
 
 .favorite-btn {
@@ -108,7 +197,7 @@
 
 .score-label {
   font-size: 12px;
-  color: var(--color-secondary);
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 

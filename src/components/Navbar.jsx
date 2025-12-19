@@ -7,11 +7,29 @@ const Navbar = () => {
   const navigate = useNavigate();
   const userInfo = getCurrentUser();
   const [showMenu, setShowMenu] = React.useState(false);
+  const menuRef = React.useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  // 点击外部关闭菜单
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
 
   return (
     <nav className="navbar">
@@ -27,7 +45,7 @@ const Navbar = () => {
             </div>
           )}
           
-          <div className="navbar-user">
+          <div className="navbar-user" ref={menuRef}>
             <button className="navbar-user-btn" onClick={() => setShowMenu(!showMenu)}>
               {userInfo?.username} ▾
             </button>
@@ -57,4 +75,9 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+
+
 
