@@ -38,6 +38,11 @@ const Login = () => {
 
   return (
     <div className="login-page">
+      {/* 装饰元素 */}
+      <div className="decoration-circle decoration-circle-1"></div>
+      <div className="decoration-circle decoration-circle-2"></div>
+      <div className="decoration-circle decoration-circle-3"></div>
+      
       <div className="login-container">
         <div className="login-header">
           <h1>JUPAS</h1>

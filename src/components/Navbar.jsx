@@ -31,6 +31,11 @@ const Navbar = () => {
     };
   }, [showMenu]);
 
+  // 鼠标离开时关闭菜单
+  const handleMouseLeave = () => {
+    setShowMenu(false);
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -45,23 +50,13 @@ const Navbar = () => {
             </div>
           )}
           
-          <div className="navbar-user" ref={menuRef}>
+          <div className="navbar-user" ref={menuRef} onMouseLeave={handleMouseLeave}>
             <button className="navbar-user-btn" onClick={() => setShowMenu(!showMenu)}>
               {userInfo?.username} ▾
             </button>
             
             {showMenu && (
               <div className="navbar-menu">
-                {userInfo?.role === 'student' && (
-                  <>
-                    <div className="navbar-menu-item" onClick={() => { navigate('/student/favorites'); setShowMenu(false); }}>
-                      我的收藏
-                    </div>
-                    <div className="navbar-menu-item" onClick={() => { navigate('/student/settings'); setShowMenu(false); }}>
-                      系统设置
-                    </div>
-                  </>
-                )}
                 <div className="navbar-menu-item" onClick={handleLogout}>
                   退出登录
                 </div>

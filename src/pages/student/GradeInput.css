@@ -39,7 +39,7 @@
   border-radius: var(--border-radius-lg);
   margin-bottom: 24px;
   box-shadow: var(--box-shadow);
-  overflow: hidden;
+  overflow: visible;
   transition: all 0.3s ease;
 }
 
@@ -51,6 +51,7 @@
   padding: 20px 24px;
   background: linear-gradient(to right, rgba(37, 99, 235, 0.05), rgba(125, 211, 252, 0.05));
   border-bottom: 2px solid var(--color-border);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
 }
 
 .card-header h3 {
@@ -68,7 +69,16 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  background: var(--color-bg-light);
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.subject-row:hover {
+  background: rgba(37, 99, 235, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .subject-row:last-child {
@@ -77,29 +87,43 @@
 
 .subject-name {
   flex: 1;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 .subject-grade {
-  width: 100px;
+  width: 120px;
 }
 
 .subject-grade .select-wrapper {
   margin-bottom: 0;
 }
 
-.subject-grade .select-wrapper select {
+.subject-grade .select-display {
+  justify-content: center;
+}
+
+.subject-grade .select-text,
+.subject-grade .select-placeholder {
   text-align: center;
-  padding: 8px 24px 8px 12px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.subject-grade .select-arrow {
+  position: absolute;
+  right: 12px;
 }
 
 .remove-btn {
-  width: 36px;
-  height: 36px;
-  border: 1.5px solid var(--color-border);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border: 2px solid var(--color-border);
   background: var(--color-bg-card);
   border-radius: var(--border-radius);
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   color: var(--color-text-secondary);
@@ -107,12 +131,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 400;
 }
 
 .remove-btn:hover {
   background: var(--color-danger);
   color: #ffffff;
   border-color: var(--color-danger);
+  transform: scale(1.1);
 }
 
 .add-subject-row {

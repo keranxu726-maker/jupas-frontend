@@ -136,7 +136,7 @@ const GradeInput = () => {
                   onClick={() => handleRemoveElective(index)}
                   title="删除科目"
                 >
-                  🗑️
+                  ×
                 </button>
               </div>
             ))}
