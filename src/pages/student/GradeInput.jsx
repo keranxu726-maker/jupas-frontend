@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import StudentTabs from '../../components/StudentTabs';
 import Select from '../../components/Select';
 import Button from '../../components/Button';
 import { REQUIRED_SUBJECTS, ELECTIVE_SUBJECTS, GRADE_LEVELS } from '../../constants/subjects';
@@ -87,25 +88,9 @@ const GradeInput = () => {
   return (
     <div className="grade-input-page">
       <Navbar />
+      <StudentTabs />
       
-      <div className="page-layout">
-        <aside className="sidebar">
-          <div 
-            className="sidebar-item"
-            onClick={() => navigate('/student/favorites')}
-          >
-            <span className="sidebar-icon">⭐</span>
-            <span className="sidebar-text">我的收藏</span>
-          </div>
-          <div 
-            className="sidebar-item"
-            onClick={() => navigate('/student/settings')}
-          >
-            <span className="sidebar-icon">⚙️</span>
-            <span className="sidebar-text">系统设置</span>
-          </div>
-        </aside>
-        
+      <div className="page-content">
         <div className="page-container">
         <h2 className="page-title">成绩输入</h2>
         
@@ -187,7 +172,7 @@ const GradeInput = () => {
             </div>
           )}
         </div>
-      </div>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Navbar from '../../components/Navbar';
+import StudentTabs from '../../components/StudentTabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Modal from '../../components/Modal';
@@ -59,8 +60,10 @@ const Settings = () => {
   return (
     <div className="settings-page">
       <Navbar />
+      <StudentTabs />
       
-      <div className="page-container">
+      <div className="page-content">
+        <div className="page-container">
         <h2 className="page-title">系统设置</h2>
         
         <div className="settings-card">
@@ -103,6 +106,7 @@ const Settings = () => {
               </div>
             </form>
           </div>
+        </div>
         </div>
       </div>
       

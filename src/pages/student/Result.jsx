@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import StudentTabs from '../../components/StudentTabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { toggleFavoriteProgram } from '../../utils/api';
@@ -75,8 +76,10 @@ const Result = () => {
   return (
     <div className="result-page">
       <Navbar />
+      <StudentTabs />
       
-      <div className="page-container">
+      <div className="page-content">
+        <div className="page-container">
         <h2 className="page-title">计算结果</h2>
         
         {grades && (
@@ -180,6 +183,7 @@ const Result = () => {
           <Button onClick={() => navigate('/student/favorites')}>
             查看收藏
           </Button>
+        </div>
         </div>
       </div>
     </div>

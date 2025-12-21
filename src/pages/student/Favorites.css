@@ -1,12 +1,18 @@
 .favorites-page {
   min-height: 100vh;
   background: var(--color-bg-page);
+  padding-bottom: 24px;
+}
+
+.page-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
 .page-container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 24px;
 }
 
 .favorites-header {
@@ -124,5 +130,40 @@
 
 .score-value {
   font-weight: 600;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .favorites-page {
+    padding-bottom: 80px;
+  }
+
+  .page-content {
+    padding: 24px 16px;
+  }
+
+  .favorites-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .favorite-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .remove-favorite-btn {
+    align-self: flex-start;
+  }
+
+  .favorite-scores {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 

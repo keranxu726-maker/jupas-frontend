@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
+import StudentTabs from '../../components/StudentTabs';
 import Button from '../../components/Button';
 import { getFavoritePrograms, toggleFavoriteProgram } from '../../utils/api';
 import './Favorites.css';
@@ -63,8 +64,10 @@ const Favorites = () => {
   return (
     <div className="favorites-page">
       <Navbar />
+      <StudentTabs />
       
-      <div className="page-container">
+      <div className="page-content">
+        <div className="page-container">
         <div className="favorites-header">
           <h2 className="page-title">我的收藏</h2>
           {programs.length > 0 && (
@@ -119,6 +122,7 @@ const Favorites = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );

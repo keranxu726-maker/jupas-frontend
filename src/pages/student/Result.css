@@ -1,12 +1,18 @@
 .result-page {
   min-height: 100vh;
   background: var(--color-bg-page);
+  padding-bottom: 24px;
+}
+
+.page-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
 .page-container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 24px;
 }
 
 .page-title {
@@ -248,5 +254,36 @@
   justify-content: center;
   gap: 16px;
   padding-top: 20px;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .result-page {
+    padding-bottom: 80px;
+  }
+
+  .page-content {
+    padding: 24px 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .filter-section {
+    grid-template-columns: 1fr;
+  }
+
+  .programs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grades-list {
+    grid-template-columns: 1fr;
+  }
+
+  .result-footer {
+    flex-direction: column;
+  }
 }
 
