@@ -153,3 +153,7 @@ ssh admin@112.124.68.82 "cd ~/jupas-frontend && git pull && source ~/.nvm/nvm.sh
 
 
 
+
+
+
+
