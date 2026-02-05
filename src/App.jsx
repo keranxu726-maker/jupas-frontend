@@ -26,7 +26,7 @@ function App() {
   const userInfo = getCurrentUser();
   
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/jupas">
       <Routes>
         <Route path="/login" element={<Login />} />
         
