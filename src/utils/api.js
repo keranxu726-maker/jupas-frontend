@@ -1,9 +1,9 @@
 import { getFavorites, toggleFavorite } from './mockData';
 import { GRADE_SCORES, SUBJECT_ALIAS_MAP } from '../constants/subjects';
 
-// 开发环境使用代理，生产环境直接请求后端
-const BASE_URL = import.meta.env.DEV ? '' : 'http://121.40.28.153:8080';
-const API_PREFIX = `${BASE_URL}/api`;
+// 开发环境使用代理，生产环境使用 /jupas-api 路径
+const BASE_URL = import.meta.env.DEV ? '' : 'http://112.124.68.82';
+const API_PREFIX = `${BASE_URL}/jupas-api`;
 
 const jsonRequest = async (path, options = {}) => {
   try {
