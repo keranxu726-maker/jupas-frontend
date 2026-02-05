@@ -53,7 +53,7 @@ const Settings = () => {
       setConfirmPassword('');
       setErrors({});
     } else {
-      setErrors({ oldPassword: result.message });
+      setErrors({ oldPassword: result.message || '重置密码失败' });
     }
   };
 

@@ -9,8 +9,8 @@ const Navbar = () => {
   const [showMenu, setShowMenu] = React.useState(false);
   const menuRef = React.useRef(null);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -31,8 +31,8 @@ const Navbar = () => {
     };
   }, [showMenu]);
 
-  // 鼠标离开时关闭菜单
-  const handleMouseLeave = () => {
+  const handleMenuClick = (action) => {
+    action();
     setShowMenu(false);
   };
 
@@ -42,22 +42,16 @@ const Navbar = () => {
         <div className="navbar-logo" onClick={() => navigate(userInfo?.role === 'admin' ? '/admin' : '/student/grade-input')}>
           JUPAS
         </div>
-        
+
         <div className="navbar-right">
-          {userInfo?.role === 'student' && (
-            <div className="navbar-points">
-              权益点数: {userInfo.points}
-            </div>
-          )}
-          
-          <div className="navbar-user" ref={menuRef} onMouseLeave={handleMouseLeave}>
+          <div className="navbar-user" ref={menuRef}>
             <button className="navbar-user-btn" onClick={() => setShowMenu(!showMenu)}>
-              {userInfo?.username} ▾
+              {userInfo?.username || userInfo?.userName} ▾
             </button>
-            
+
             {showMenu && (
               <div className="navbar-menu">
-                <div className="navbar-menu-item" onClick={handleLogout}>
+                <div className="navbar-menu-item" onClick={() => handleMenuClick(handleLogout)}>
                   退出登录
                 </div>
               </div>

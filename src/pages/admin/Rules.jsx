@@ -1,105 +1,48 @@
-import React, { useState } from 'react';
-import Button from '../../components/Button';
-import Modal from '../../components/Modal';
+import React from 'react';
 import './Rules.css';
 
 const Rules = () => {
-  const [rules, setRules] = useState([]);
-  const [previewData, setPreviewData] = useState(null);
-
-  const handleUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        try {
-          const text = await file.text();
-          const json = JSON.parse(text);
-          const newRule = {
-            id: Date.now().toString(),
-            name: file.name,
-            uploadTime: new Date().toLocaleString(),
-            content: json
-          };
-          setRules([...rules, newRule]);
-        } catch (error) {
-          alert('JSON文件格式错误');
-        }
-      }
-    };
-    input.click();
-  };
-
-  const handlePreview = (rule) => {
-    setPreviewData(rule);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('确认删除该规则文件？')) {
-      setRules(rules.filter(r => r.id !== id));
-    }
-  };
-
   return (
     <div className="rules-section">
       <div className="section-header">
         <h2>计算规则管理</h2>
-        <Button onClick={handleUpload}>+ 上传规则文件</Button>
       </div>
-      
-      <div className="rules-grid">
-        {rules.length === 0 ? (
-          <div className="empty-state">
-            <p>暂无规则文件</p>
-            <p style={{ fontSize: '12px', color: 'var(--color-secondary)', marginTop: '8px' }}>
-              请上传JSON格式的规则文件
-            </p>
-          </div>
-        ) : (
-          rules.map(rule => (
-            <div key={rule.id} className="rule-card">
-              <div className="rule-name">{rule.name}</div>
-              <div className="rule-time">上传时间：{rule.uploadTime}</div>
-              <div className="rule-actions">
-                <Button size="small" onClick={() => handlePreview(rule)}>
-                  预览
-                </Button>
-                <Button size="small" type="danger" onClick={() => handleDelete(rule.id)}>
-                  删除
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      
-      <Modal
-        isOpen={!!previewData}
-        onClose={() => setPreviewData(null)}
-        title={`规则预览 - ${previewData?.name}`}
-        width="700px"
-      >
-        <pre className="json-preview">
-          {JSON.stringify(previewData?.content, null, 2)}
-        </pre>
-        <div style={{ marginTop: '20px', textAlign: 'right' }}>
-          <Button onClick={() => setPreviewData(null)}>关闭</Button>
+
+      <div style={{
+        padding: '60px 20px',
+        textAlign: 'center',
+        color: '#666'
+      }}>
+        <p style={{ fontSize: '18px', marginBottom: '16px', color: '#333' }}>计算规则功能</p>
+        <p style={{ fontSize: '14px', marginBottom: '8px', color: '#999' }}>
+          后端暂未提供计算规则管理接口
+        </p>
+        <p style={{ fontSize: '14px', color: '#999' }}>
+          计算规则目前由后端固定配置，前端无法修改
+        </p>
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#f5f5f5',
+          borderRadius: '8px',
+          textAlign: 'left',
+          maxWidth: '500px',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
+          <p style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#333' }}>
+            当前计算方式：
+          </p>
+          <ul style={{ fontSize: '13px', color: '#666', paddingLeft: '20px', margin: 0 }}>
+            <li>必选科目成绩转换：U=0, 1=1, 2=2, ..., 5**=7</li>
+            <li>选修科目成绩转换：同上</li>
+            <li>总分 = 所有科目成绩转换后相加</li>
+            <li>专业匹配：根据总分与专业往年录取分对比</li>
+          </ul>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 };
 
 export default Rules;
-
-
-
-
-
-
-
-
-
-

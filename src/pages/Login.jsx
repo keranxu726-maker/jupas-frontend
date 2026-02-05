@@ -8,8 +8,8 @@ import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('gangan');
+  const [password, setPassword] = useState('hajdsfgdfj#$@');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +32,7 @@ const Login = () => {
         navigate('/student/grade-input');
       }
     } else {
-      setError(result.message);
+      setError(result.message || '登录失败');
     }
   };
 
@@ -72,8 +72,7 @@ const Login = () => {
         
         <div className="login-tips">
           <div className="login-tip-title">测试账号：</div>
-          <div className="login-tip-item">管理员：admin / admin123</div>
-          <div className="login-tip-item">学生：student1 / 123456</div>
+          <div className="login-tip-item">管理员：gangan / hajdsfgdfj#$@</div>
         </div>
       </div>
       

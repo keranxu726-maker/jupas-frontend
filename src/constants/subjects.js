@@ -38,6 +38,47 @@ export const ELECTIVE_SUBJECTS = [
   'Spanish'
 ];
 
+// 英文名称到后端 alias 的映射（后端验证需要）
+export const SUBJECT_ALIAS_MAP = {
+  // 必选科目
+  'Chinese Language': 'chi',
+  'English Language': 'eng',
+  'Mathematics Compulsory Part': 'math',
+
+  // 选修科目
+  'Biology': 'bio',
+  'Business, Accounting and Financial Studies': 'bafs',
+  'Chemistry': 'che',
+  'Chinese History': 'chist',
+  'Chinese Literature': 'clit',
+  'Combined Science: Biology + Chemistry': 'bioche',
+  'Combined Science: Biology + Physics': 'biophy',
+  'Combined Science: Physics + Chemistry': 'chephy',
+  'Design and Applied Technology': 'dat',
+  'Economics': 'eco',
+  'Ethics and Religious Studies': 'ers',
+  'Geography': 'geo',
+  'Health Management and Social Care': 'hmsc',
+  'History': 'hist',
+  'Information and Communication Technology': 'ict',
+  'Integrated Science': 'intsci',
+  'English Literature': 'elit',
+  'Mathematics Extended Part 1 (Calculus and Statistics)': 'm1m2',
+  'Mathematics Extended Part 2 (Algebra and Calculus)': 'm1m2',
+  'Music': 'music',
+  'Physical Education': 'pedu',
+  'Physics': 'phy',
+  'Technology and Living (Fashion, Clothing and Textiles)': 'fct',
+  'Technology and Living (Food Science and Technology)': 'fst',
+  'Tourism and Hospitality Studies': 'tour',
+  'Visual Arts': 'vart',
+  'French': 'frn',
+  'German': 'gem',
+  'Japanese': 'jpn',
+  'Korean': 'kre',
+  'Spanish': 'spn'
+};
+
 export const GRADE_LEVELS = ['U', '1', '2', '3', '4', '5', '5*', '5**'];
 
 export const GRADE_SCORES = {
@@ -50,13 +91,3 @@ export const GRADE_SCORES = {
   '5*': 6,
   '5**': 7
 };
-
-
-
-
-
-
-
-
-
-
