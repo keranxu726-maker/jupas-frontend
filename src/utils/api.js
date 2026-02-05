@@ -1,8 +1,8 @@
 import { getFavorites, toggleFavorite } from './mockData';
 import { GRADE_SCORES, SUBJECT_ALIAS_MAP } from '../constants/subjects';
 
-// 开发环境使用代理，生产环境直接请求后端
-const BASE_URL = import.meta.env.DEV ? '' : 'http://121.40.28.153:8080';
+// 开发环境和生产环境都使用相对路径（通过 Nginx 代理）
+const BASE_URL = '';
 const API_PREFIX = `${BASE_URL}/api`;
 
 const jsonRequest = async (path, options = {}) => {
