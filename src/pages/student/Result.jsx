@@ -201,6 +201,14 @@ const Result = () => {
                     <div className="rc-title">{program.program}</div>
                     <div className="rc-id">ID: {program.id}</div>
 
+                    {/* 总分 */}
+                    {program.totalScore != null && (
+                      <div className="rc-total-score">
+                        <span className="rc-total-score-label">总分</span>
+                        <span className="rc-total-score-value">{program.totalScore.toFixed(1)}</span>
+                      </div>
+                    )}
+
                     {/* 招生人数（多年度标签） */}
                     {admissionYears.length > 0 && (
                       <div className="rc-row rc-admission">

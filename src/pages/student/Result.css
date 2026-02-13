@@ -218,6 +218,31 @@
   margin-bottom: 16px;
 }
 
+/* 总分 */
+.rc-total-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 20px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+}
+
+.rc-total-score-label {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.rc-total-score-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
 /* 标签行 */
 .rc-row {
   display: flex;
