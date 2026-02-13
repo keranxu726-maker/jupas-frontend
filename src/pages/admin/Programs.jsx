@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Modal from '../../components/Modal';
@@ -24,8 +24,11 @@ const CALCULATE_TYPE_OPTIONS = [
 
 const Programs = () => {
   const [programs, setPrograms] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredPrograms, setFilteredPrograms] = useState([]);
+  const [filterRegYear, setFilterRegYear] = useState('');
+  const [filterMajorId, setFilterMajorId] = useState('');
+  const [filterSchool, setFilterSchool] = useState('');
+  const [filterOptions, setFilterOptions] = useState({ years: [], majorIds: [], schools: [] });
+  const filterInitRef = useRef(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
   const [formData, setFormData] = useState({
@@ -46,28 +49,48 @@ const Programs = () => {
     rewardRules: []
   });
 
+  // 初始加载全量数据，提取筛选选项
   useEffect(() => {
-    loadPrograms();
+    loadFilterOptions();
   }, []);
 
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = programs.filter(p =>
-        p.school.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.id.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredPrograms(filtered);
-    } else {
-      setFilteredPrograms(programs);
+  const loadFilterOptions = async () => {
+    const result = await getAllPrograms(1, 10000);
+    if (result.success) {
+      const data = result.data;
+      const years = [...new Set(data.map(p => p.regYear).filter(Boolean))].sort((a, b) => b - a);
+      const majorIds = [...new Set(data.map(p => p.id).filter(Boolean))].sort();
+      const schools = [...new Set(data.map(p => p.school).filter(Boolean))].sort();
+      setFilterOptions({
+        years: years.map(y => ({ value: String(y), label: String(y) })),
+        majorIds: majorIds.map(id => ({ value: id, label: id })),
+        schools: schools.map(s => ({ value: s, label: s }))
+      });
+      setPrograms(data);
     }
-  }, [searchTerm, programs]);
+  };
+
+  // 筛选条件变化时重新请求后端（跳过首次）
+  useEffect(() => {
+    if (!filterInitRef.current) {
+      filterInitRef.current = true;
+      return;
+    }
+    const timer = setTimeout(() => {
+      loadPrograms();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filterRegYear, filterMajorId, filterSchool]);
 
   const loadPrograms = async () => {
-    const result = await getAllPrograms();
+    const filters = {
+      regYear: filterRegYear,
+      majorId: filterMajorId,
+      majorSchoolName: filterSchool
+    };
+    const result = await getAllPrograms(1, 1000, filters);
     if (result.success) {
       setPrograms(result.data);
-      setFilteredPrograms(result.data);
     } else {
       alert(result.message || '获取专业列表失败');
     }
@@ -120,6 +143,28 @@ const Programs = () => {
       subjectReqLevel: program.subjectReqLevel || [],
       compulsorySubjects: program.compulsorySubjects || [],
       rewardRules: program.rewardRules || []
+    });
+    setModalOpen(true);
+  };
+
+  const handleCopy = (program) => {
+    setEditingProgram(null);
+    setFormData({
+      majorId: program.id + '-COPY',
+      majorName: program.program,
+      schoolName: program.school,
+      regYear: program.regYear || new Date().getFullYear(),
+      heightScore: program.historyScore.max || '',
+      middleScore: program.historyScore.median || '',
+      lowScore: program.historyScore.min || '',
+      admissionCount: program.admissionCount || '',
+      majorDetailLink: program.majorDetailLink || '',
+      remark: program.remark || '',
+      calculateType: program.calculateType || 1,
+      bestCount: program.bestCount || 2,
+      subjectReqLevel: JSON.parse(JSON.stringify(program.subjectReqLevel || [])),
+      compulsorySubjects: JSON.parse(JSON.stringify(program.compulsorySubjects || [])),
+      rewardRules: JSON.parse(JSON.stringify(program.rewardRules || []))
     });
     setModalOpen(true);
   };
@@ -247,7 +292,7 @@ const Programs = () => {
     if (result.success) {
       alert(result.message || (editingProgram ? '编辑成功' : '添加成功'));
       setModalOpen(false);
-      loadPrograms();
+      loadFilterOptions();
     } else {
       alert(result.message || '操作失败');
     }
@@ -258,7 +303,7 @@ const Programs = () => {
       const result = await deleteMajor(program.dbId);
       if (result.success) {
         alert(result.message || '删除成功');
-        loadPrograms();
+        loadFilterOptions();
       } else {
         alert(result.message || '删除失败');
       }
@@ -272,11 +317,27 @@ const Programs = () => {
         <Button onClick={handleAdd}>+ 添加专业</Button>
       </div>
 
-      <div className="search-bar">
-        <Input
-          placeholder="搜索学校、专业或ID"
-          value={searchTerm}
-          onChange={setSearchTerm}
+      <div className="search-bar" style={{ display: 'flex', gap: '12px' }}>
+        <Select
+          placeholder="注册年份"
+          value={filterRegYear}
+          onChange={setFilterRegYear}
+          options={[{ value: '', label: '全部年份' }, ...filterOptions.years]}
+          searchable={true}
+        />
+        <Select
+          placeholder="专业ID"
+          value={filterMajorId}
+          onChange={setFilterMajorId}
+          options={[{ value: '', label: '全部专业' }, ...filterOptions.majorIds]}
+          searchable={true}
+        />
+        <Select
+          placeholder="学校名称"
+          value={filterSchool}
+          onChange={setFilterSchool}
+          options={[{ value: '', label: '全部学校' }, ...filterOptions.schools]}
+          searchable={true}
         />
       </div>
 
@@ -287,7 +348,6 @@ const Programs = () => {
               <th>ID</th>
               <th>学校</th>
               <th>专业</th>
-              <th>总分</th>
               <th>最高分</th>
               <th>最低分</th>
               <th>中位数</th>
@@ -295,17 +355,19 @@ const Programs = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredPrograms.map(program => (
+            {programs.map(program => (
               <tr key={program.dbId || program.id}>
                 <td>{program.id}</td>
                 <td>{program.school}</td>
                 <td>{program.program}</td>
-                <td>{program.totalScore}</td>
                 <td>{program.historyScore.max}</td>
                 <td>{program.historyScore.min}</td>
                 <td>{program.historyScore.median}</td>
                 <td>
                   <div className="table-actions">
+                    <Button size="small" onClick={() => handleCopy(program)}>
+                      复制
+                    </Button>
                     <Button size="small" onClick={() => handleEdit(program)}>
                       编辑
                     </Button>
@@ -319,9 +381,9 @@ const Programs = () => {
           </tbody>
         </table>
 
-        {filteredPrograms.length === 0 && (
+        {programs.length === 0 && (
           <div className="empty-table">
-            {searchTerm ? '未找到匹配的专业' : '暂无数据'}
+            {(filterRegYear || filterMajorId || filterSchool) ? '未找到匹配的专业' : '暂无数据'}
           </div>
         )}
       </div>

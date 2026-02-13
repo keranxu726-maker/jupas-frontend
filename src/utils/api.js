@@ -1,4 +1,3 @@
-import { getFavorites, toggleFavorite } from './mockData';
 import { GRADE_SCORES, SUBJECT_ALIAS_MAP } from '../constants/subjects';
 
 // 开发环境使用代理，生产环境使用 /jupas-backend 路径
@@ -95,73 +94,102 @@ export const getUserInfo = async () => {
   return { success: true, data: userInfo };
 };
 
-// 成绩计算 - 使用前端本地计算逻辑
+// 成绩计算 - 调用后端计算接口
 export const calculatePrograms = async (grades) => {
-  let totalScore = 0;
+  // 构建 reqScoreMap: { alias: grade }
+  const reqScoreMap = {};
 
-  Object.values(grades.requiredSubjects).forEach(grade => {
-    totalScore += GRADE_SCORES[grade] || 0;
+  // 必选科目
+  Object.entries(grades.requiredSubjects).forEach(([subject, grade]) => {
+    const alias = SUBJECT_ALIAS_MAP[subject];
+    if (alias && grade) {
+      reqScoreMap[alias] = grade;
+    }
   });
 
+  // 选修科目
   grades.electiveSubjects.forEach(item => {
-    totalScore += GRADE_SCORES[item.grade] || 0;
+    const alias = item.alias || SUBJECT_ALIAS_MAP[item.subject];
+    if (alias && item.grade) {
+      reqScoreMap[alias] = item.grade;
+    }
   });
 
-  // 获取所有专业并计算匹配度
-  const programsResult = await getAllPrograms();
-  if (!programsResult.success) {
-    return { success: false, message: '获取专业数据失败' };
+  const result = await jsonRequest('/calculate/calculate', {
+    method: 'POST',
+    body: JSON.stringify(reqScoreMap)
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message || '计算失败' };
   }
 
-  const suitablePrograms = programsResult.data.filter(program => {
-    const minScore = program.historyScore.min - 3;
-    const maxScore = program.historyScore.max + 3;
-    return totalScore >= minScore && totalScore <= maxScore;
-  }).map(program => {
-    let successRate = 'medium';
-    if (totalScore >= program.historyScore.median + 2) {
-      successRate = 'high';
-    } else if (totalScore < program.historyScore.min) {
-      successRate = 'low';
-    }
-
+  const list = result.data || [];
+  const programs = list.map(item => {
+    const major = item.recentlyMajorDetail || {};
     return {
-      ...program,
-      successRate,
-      userScore: totalScore
+      id: major.majorId,
+      school: major.schoolName,
+      program: major.majorName,
+      majorDetailLink: major.majorDetailLink,
+      totalScore: item.totalScore,
+      totalSubject: item.totalSubject,
+      heightScore: major.heightScore,
+      middleScore: major.middleScore,
+      lowScore: major.lowScore,
+      admissionCount: major.admissionCount
     };
-  });
-
-  suitablePrograms.sort((a, b) => {
-    const rateOrder = { high: 0, medium: 1, low: 2 };
-    if (rateOrder[a.successRate] !== rateOrder[b.successRate]) {
-      return rateOrder[a.successRate] - rateOrder[b.successRate];
-    }
-    return b.userScore - a.userScore;
   });
 
   return {
     success: true,
     data: {
-      totalScore,
-      programs: suitablePrograms
+      programs
     }
   };
 };
 
+// 查询我的收藏列表
 export const getFavoritePrograms = async () => {
-  const favoriteIds = getFavorites();
-  const programsResult = await getAllPrograms();
-  if (!programsResult.success) {
-    return { success: false, message: '获取专业数据失败' };
+  const result = await jsonRequest('/majorFavorite/queryMyMajorFavoriteList', {
+    method: 'POST'
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message || '获取收藏列表失败' };
   }
-  const programs = programsResult.data.filter(p => favoriteIds.includes(p.id));
-  return { success: true, data: programs };
+
+  const list = result.data || [];
+  const mapped = list.map(item => ({
+    id: item.majorId,
+    school: item.schoolName,
+    program: item.majorName,
+    majorDetailLink: item.majorDetailLink,
+    heightScore: item.heightScore,
+    middleScore: item.middleScore,
+    lowScore: item.lowScore,
+    admissionCount: item.admissionCount
+  }));
+
+  return { success: true, data: mapped };
 };
 
-export const toggleFavoriteProgram = async (programId) => {
-  const favorites = toggleFavorite(programId);
-  return { success: true, data: favorites };
+// 添加收藏
+export const addFavoriteProgram = async (majorId) => {
+  const result = await jsonRequest('/majorFavorite/addMajorFavorite', {
+    method: 'POST',
+    body: JSON.stringify({ majorId })
+  });
+  return result;
+};
+
+// 取消收藏
+export const cancelFavoriteProgram = async (majorId) => {
+  const result = await jsonRequest('/majorFavorite/cancelMajorFavorite', {
+    method: 'POST',
+    body: JSON.stringify({ majorId })
+  });
+  return result;
 };
 
 export const resetPassword = async (oldPassword, newPassword) => {
@@ -185,16 +213,19 @@ export const resetPassword = async (oldPassword, newPassword) => {
 // 单个注册用户
 export const createAccount = async (accountData) => {
   // 将选修科目英文名称转换为后端 alias
-  const electiveAliases = (accountData.electiveSubjects || []).map(
-    subject => SUBJECT_ALIAS_MAP[subject] || subject
-  );
+  const isAdmin = accountData.role === 'admin';
+  const electiveAliases = isAdmin
+    ? ['chi']
+    : (accountData.electiveSubjects || []).map(
+        subject => SUBJECT_ALIAS_MAP[subject] || subject
+      );
 
   const result = await jsonRequest('/users/singleRegister', {
     method: 'POST',
     body: JSON.stringify({
       name: accountData.username,
       password: accountData.password,
-      userType: accountData.role === 'admin' ? 'admin' : 'student',
+      userType: isAdmin ? 'admin' : 'student',
       electiveSubjects: electiveAliases
     })
   });
@@ -242,13 +273,15 @@ export const deleteAccount = async (id) => {
 };
 
 // ==================== 专业管理接口 ====================
-export const getAllPrograms = async (curPage = 1, pageSize = 1000) => {
+export const getAllPrograms = async (curPage = 1, pageSize = 1000, filters = {}) => {
+  const params = { curPage, pageSize };
+  if (filters.regYear) params.regYear = parseInt(filters.regYear);
+  if (filters.majorId) params.majorId = filters.majorId;
+  if (filters.majorSchoolName) params.majorSchoolName = filters.majorSchoolName;
+
   const result = await jsonRequest('/major/queryMajorPage', {
     method: 'POST',
-    body: JSON.stringify({
-      curPage,
-      pageSize
-    })
+    body: JSON.stringify(params)
   });
 
   if (!result.success) {

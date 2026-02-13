@@ -70,10 +70,6 @@ const Login = () => {
           </Button>
         </form>
         
-        <div className="login-tips">
-          <div className="login-tip-title">测试账号：</div>
-          <div className="login-tip-item">管理员：gangan / hajdsfgdfj#$@</div>
-        </div>
       </div>
       
       <Modal isOpen={!!error} onClose={() => setError('')} title="登录失败">

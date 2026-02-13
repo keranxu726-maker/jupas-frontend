@@ -36,7 +36,7 @@ const Accounts = () => {
       return;
     }
 
-    if (formData.electiveSubjects.length === 0) {
+    if (activeTab === 'student' && formData.electiveSubjects.length === 0) {
       alert('请至少选择1门选修科目');
       return;
     }
@@ -176,60 +176,63 @@ const Accounts = () => {
           placeholder="请输入登录密码"
         />
 
-        <div>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
-            选修科目 *（至少选择1门）
-          </label>
-          <Select
-            value=""
-            onChange={(subject) => {
-              if (subject && !formData.electiveSubjects.includes(subject)) {
-                setFormData({ ...formData, electiveSubjects: [...formData.electiveSubjects, subject] });
-              }
-            }}
-            options={electiveOptions.filter(s => !formData.electiveSubjects.includes(s.value))}
-            placeholder="+ 添加选修科目"
-          />
-          <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {formData.electiveSubjects.length === 0 ? (
-              <span style={{ fontSize: '13px', color: '#999' }}>暂未选择任何科目</span>
-            ) : (
-              formData.electiveSubjects.map((subject, index) => (
-                <span
-                  key={index}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    padding: '6px 12px',
-                    background: '#e3f2fd',
-                    borderRadius: '16px',
-                    fontSize: '13px',
-                    color: '#1565c0'
-                  }}
-                >
-                  {subject}
-                  <button
-                    onClick={() => {
-                      const newSubjects = formData.electiveSubjects.filter((_, i) => i !== index);
-                      setFormData({ ...formData, electiveSubjects: newSubjects });
-                    }}
+        {activeTab === 'student' && (
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+              选修科目 *（至少选择1门）
+            </label>
+            <Select
+              value=""
+              onChange={(subject) => {
+                if (subject && !formData.electiveSubjects.includes(subject)) {
+                  setFormData({ ...formData, electiveSubjects: [...formData.electiveSubjects, subject] });
+                }
+              }}
+              options={electiveOptions.filter(s => !formData.electiveSubjects.includes(s.value))}
+              placeholder="+ 添加选修科目"
+              searchable={true}
+            />
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {formData.electiveSubjects.length === 0 ? (
+                <span style={{ fontSize: '13px', color: '#999' }}>暂未选择任何科目</span>
+              ) : (
+                formData.electiveSubjects.map((subject, index) => (
+                  <span
+                    key={index}
                     style={{
-                      marginLeft: '8px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#1565c0',
-                      cursor: 'pointer',
-                      fontSize: '16px',
-                      padding: '0'
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '6px 12px',
+                      background: '#e3f2fd',
+                      borderRadius: '16px',
+                      fontSize: '13px',
+                      color: '#1565c0'
                     }}
                   >
-                    ×
-                  </button>
-                </span>
-              ))
-            )}
+                    {subject}
+                    <button
+                      onClick={() => {
+                        const newSubjects = formData.electiveSubjects.filter((_, i) => i !== index);
+                        setFormData({ ...formData, electiveSubjects: newSubjects });
+                      }}
+                      style={{
+                        marginLeft: '8px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#1565c0',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        padding: '0'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <Button type="secondary" onClick={() => setModalOpen(false)}>
@@ -252,9 +255,30 @@ const Accounts = () => {
         title="Excel批量导入账号"
       >
         <div style={{ marginBottom: '20px' }}>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
-            请上传包含账号信息的Excel文件
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', margin: 0 }}>
+              请上传包含账号信息的Excel文件
+            </p>
+            <a
+              href={`${import.meta.env.BASE_URL}account_template.xlsx`}
+              download="账号导入模板.xlsx"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 14px',
+                background: '#10b981',
+                color: 'white',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: '500',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              下载导入模板
+            </a>
+          </div>
           <div style={{
             padding: '16px',
             background: 'var(--color-bg-light)',
@@ -266,11 +290,13 @@ const Accounts = () => {
               <li>第1列：账号名称（必填）</li>
               <li>第2列：登录密码（必填）</li>
               <li>第3列：用户类型（必填，填 "student" 或 "admin"）</li>
-              <li>第4列：选修科目（必填，多个用逗号分隔，如：bio,che,phy）</li>
+              <li>第4列：选修科目（学生必填，多个用逗号分隔，如：bio,che,phy）</li>
             </ul>
             <p style={{ fontSize: '12px', color: '#666', marginTop: '12px', marginBottom: 0 }}>
               <strong>科目别名参考：</strong><br/>
-              bio=生物, che=化学, phy=物理, bafs=商科, eco=经济, geo=地理, hist=历史, ict=信息科技
+              bio=生物, che=化学, phy=物理, bafs=商科, eco=经济, geo=地理, hist=历史, ict=信息科技,
+              chist=中国历史, clit=中国文学, elit=英国文学, music=音乐, vart=视觉艺术, dat=设计与应用科技,
+              ers=伦理与宗教, tour=旅游, hmsc=健康管理, pedu=体育, m1m2=数学延伸
             </p>
           </div>
 

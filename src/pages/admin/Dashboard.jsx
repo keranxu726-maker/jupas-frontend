@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../utils/api';
 import Accounts from './Accounts';
-import Rules from './Rules';
+// import Rules from './Rules';
 import Programs from './Programs';
 import './Dashboard.css';
 
@@ -28,12 +28,12 @@ const Dashboard = () => {
           >
             账号管理
           </button>
-          <button
+          {/* <button
             className={`nav-item ${activeTab === 'rules' ? 'active' : ''}`}
             onClick={() => setActiveTab('rules')}
           >
             计算规则
-          </button>
+          </button> */}
           <button
             className={`nav-item ${activeTab === 'programs' ? 'active' : ''}`}
             onClick={() => setActiveTab('programs')}
@@ -51,7 +51,7 @@ const Dashboard = () => {
       
       <div className="dashboard-content">
         {activeTab === 'accounts' && <Accounts />}
-        {activeTab === 'rules' && <Rules />}
+        {/* {activeTab === 'rules' && <Rules />} */}
         {activeTab === 'programs' && <Programs />}
       </div>
     </div>

@@ -1,7 +1,8 @@
 export const REQUIRED_SUBJECTS = [
   'Chinese Language',
   'English Language',
-  'Mathematics Compulsory Part'
+  'Mathematics Compulsory Part',
+  'Citizenship and Social Development'
 ];
 
 export const ELECTIVE_SUBJECTS = [
@@ -44,6 +45,7 @@ export const SUBJECT_ALIAS_MAP = {
   'Chinese Language': 'chi',
   'English Language': 'eng',
   'Mathematics Compulsory Part': 'math',
+  'Citizenship and Social Development': 'csd',
 
   // 选修科目
   'Biology': 'bio',
@@ -79,7 +81,7 @@ export const SUBJECT_ALIAS_MAP = {
   'Spanish': 'spn'
 };
 
-export const GRADE_LEVELS = ['U', '1', '2', '3', '4', '5', '5*', '5**'];
+export const GRADE_LEVELS = ['5**', '5*', '5', '4', '3', '2', '1', 'U'];
 
 export const GRADE_SCORES = {
   'U': 0,
