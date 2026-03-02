@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/jupas/',
+  base: '/',
   server: {
     port: 3000,
     proxy: {
       '/jupas-backend': {
-        target: 'http://112.124.68.82',
+        target: 'http://121.40.28.153',
         changeOrigin: true
       }
     }

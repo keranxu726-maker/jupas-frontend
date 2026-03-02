@@ -1,8 +1,6 @@
 import { GRADE_SCORES, SUBJECT_ALIAS_MAP } from '../constants/subjects';
 
-// 开发环境使用代理，生产环境使用 /jupas-backend 路径
-const BASE_URL = import.meta.env.DEV ? '' : 'http://112.124.68.82';
-const API_PREFIX = `${BASE_URL}/jupas-backend`;
+const API_PREFIX = '/jupas-backend';
 
 const jsonRequest = async (path, options = {}) => {
   try {
@@ -310,6 +308,7 @@ export const getAllPrograms = async (curPage = 1, pageSize = 1000, filters = {})
     calculateType: item.calculateType,
     bestCount: item.bestCount,
     compulsorySubjects: item.compulsorySubjects,
+    electiveSubjects: item.electiveSubjects,
     rewardRules: item.rewardRules,
     opUser: item.opUser
   }));

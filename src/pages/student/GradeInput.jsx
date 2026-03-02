@@ -14,7 +14,7 @@ const GradeInput = () => {
     'Chinese Language': '5**',
     'English Language': '5**',
     'Mathematics Compulsory Part': '5**',
-    'Citizenship and Social Development': '5**'
+    'Citizenship and Social Development': 'A'
   });
 
   const [electiveSubjects, setElectiveSubjects] = useState([]);
@@ -22,6 +22,12 @@ const GradeInput = () => {
   const [error, setError] = useState('');
 
   const gradeOptions = GRADE_LEVELS.map(g => ({ value: g, label: g }));
+  const csdOptions = [
+    { value: 'A', label: 'A (达标)' },
+    { value: 'F', label: 'F (不达标)' }
+  ];
+  const CSD_SUBJECT = 'Citizenship and Social Development';
+  const isCsdFail = requiredGrades[CSD_SUBJECT] === 'F';
 
   // 从登录用户信息中读取选修科目列表
   useEffect(() => {
@@ -49,6 +55,7 @@ const GradeInput = () => {
   };
 
   const canCalculate = () => {
+    if (isCsdFail) return false;
     const requiredFilled = Object.values(requiredGrades).every(g => g !== '');
     const electivesFilled = electiveSubjects.length > 0 &&
       electiveSubjects.every(e => e.grade !== '');
@@ -62,8 +69,9 @@ const GradeInput = () => {
     }
 
     setLoading(true);
+    const { [CSD_SUBJECT]: _, ...requiredGradesWithoutCsd } = requiredGrades;
     const result = await calculatePrograms({
-      requiredSubjects: requiredGrades,
+      requiredSubjects: requiredGradesWithoutCsd,
       electiveSubjects
     });
     setLoading(false);
@@ -104,7 +112,7 @@ const GradeInput = () => {
                     <Select
                       value={requiredGrades[subject]}
                       onChange={(grade) => handleRequiredGradeChange(subject, grade)}
-                      options={gradeOptions}
+                      options={subject === CSD_SUBJECT ? csdOptions : gradeOptions}
                       placeholder="请选择"
                     />
                   </div>
@@ -153,7 +161,12 @@ const GradeInput = () => {
               {loading ? '计算中...' : '计算专业推荐'}
             </Button>
 
-            {!canCalculate() && (
+            {isCsdFail && (
+              <div className="hint-text" style={{ color: '#ef4444' }}>
+                公民与社会发展科未达标，无法计算
+              </div>
+            )}
+            {!canCalculate() && !isCsdFail && (
               <div className="hint-text">
                 请完成所有科目成绩的选择
               </div>

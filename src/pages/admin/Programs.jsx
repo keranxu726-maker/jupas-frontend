@@ -22,8 +22,12 @@ const CALCULATE_TYPE_OPTIONS = [
   { value: 2, label: '自定义计算' }
 ];
 
+const PAGE_SIZE = 30;
+
 const Programs = () => {
   const [programs, setPrograms] = useState([]);
+  const [curPage, setCurPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [filterRegYear, setFilterRegYear] = useState('');
   const [filterMajorId, setFilterMajorId] = useState('');
   const [filterSchool, setFilterSchool] = useState('');
@@ -46,10 +50,11 @@ const Programs = () => {
     bestCount: 2,
     subjectReqLevel: [],
     compulsorySubjects: [],
+    electiveSubjects: [],
     rewardRules: []
   });
 
-  // 初始加载全量数据，提取筛选选项
+  // 初始加载筛选选项
   useEffect(() => {
     loadFilterOptions();
   }, []);
@@ -66,34 +71,45 @@ const Programs = () => {
         majorIds: majorIds.map(id => ({ value: id, label: id })),
         schools: schools.map(s => ({ value: s, label: s }))
       });
-      setPrograms(data);
     }
   };
 
-  // 筛选条件变化时重新请求后端（跳过首次）
+  // 初始加载 + 筛选条件变化时重新请求（重置到第1页）
   useEffect(() => {
     if (!filterInitRef.current) {
       filterInitRef.current = true;
+      loadPrograms(1);
       return;
     }
     const timer = setTimeout(() => {
-      loadPrograms();
+      setCurPage(1);
+      loadPrograms(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [filterRegYear, filterMajorId, filterSchool]);
 
-  const loadPrograms = async () => {
+  const loadPrograms = async (page) => {
+    const p = page || curPage;
     const filters = {
       regYear: filterRegYear,
       majorId: filterMajorId,
       majorSchoolName: filterSchool
     };
-    const result = await getAllPrograms(1, 1000, filters);
+    const result = await getAllPrograms(p, PAGE_SIZE, filters);
     if (result.success) {
       setPrograms(result.data);
+      setTotal(result.total || 0);
+      setCurPage(p);
     } else {
       alert(result.message || '获取专业列表失败');
     }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    loadPrograms(page);
   };
 
   const resetForm = () => ({
@@ -115,6 +131,7 @@ const Programs = () => {
       { subjectAlias: 'math', subjectLevel: '3' }
     ],
     compulsorySubjects: [],
+    electiveSubjects: [],
     rewardRules: []
   });
 
@@ -142,6 +159,7 @@ const Programs = () => {
       bestCount: program.bestCount || 2,
       subjectReqLevel: program.subjectReqLevel || [],
       compulsorySubjects: program.compulsorySubjects || [],
+      electiveSubjects: program.electiveSubjects || [],
       rewardRules: program.rewardRules || []
     });
     setModalOpen(true);
@@ -164,6 +182,7 @@ const Programs = () => {
       bestCount: program.bestCount || 2,
       subjectReqLevel: JSON.parse(JSON.stringify(program.subjectReqLevel || [])),
       compulsorySubjects: JSON.parse(JSON.stringify(program.compulsorySubjects || [])),
+      electiveSubjects: JSON.parse(JSON.stringify(program.electiveSubjects || [])),
       rewardRules: JSON.parse(JSON.stringify(program.rewardRules || []))
     });
     setModalOpen(true);
@@ -226,6 +245,44 @@ const Programs = () => {
     const newSubjects = [...formData.compulsorySubjects];
     newSubjects[subjectIndex].subjectAliasList = newSubjects[subjectIndex].subjectAliasList.filter((_, i) => i !== aliasIndex);
     setFormData({ ...formData, compulsorySubjects: newSubjects });
+  };
+
+  // ===== 计分方式区 - 计分非必选科目 =====
+  const handleAddElectiveSubject = () => {
+    setFormData({
+      ...formData,
+      electiveSubjects: [
+        ...formData.electiveSubjects,
+        { subjectAliasList: [], subjectWeight: '' }
+      ]
+    });
+  };
+
+  const handleRemoveElectiveSubject = (index) => {
+    setFormData({
+      ...formData,
+      electiveSubjects: formData.electiveSubjects.filter((_, i) => i !== index)
+    });
+  };
+
+  const handleElectiveSubjectChange = (index, field, value) => {
+    const newSubjects = [...formData.electiveSubjects];
+    newSubjects[index][field] = value;
+    setFormData({ ...formData, electiveSubjects: newSubjects });
+  };
+
+  const handleElectiveAliasChange = (index, value) => {
+    const newSubjects = [...formData.electiveSubjects];
+    if (!newSubjects[index].subjectAliasList.includes(value)) {
+      newSubjects[index].subjectAliasList = [...newSubjects[index].subjectAliasList, value];
+    }
+    setFormData({ ...formData, electiveSubjects: newSubjects });
+  };
+
+  const handleRemoveElectiveAlias = (subjectIndex, aliasIndex) => {
+    const newSubjects = [...formData.electiveSubjects];
+    newSubjects[subjectIndex].subjectAliasList = newSubjects[subjectIndex].subjectAliasList.filter((_, i) => i !== aliasIndex);
+    setFormData({ ...formData, electiveSubjects: newSubjects });
   };
 
   // ===== 奖励分区 =====
@@ -293,6 +350,7 @@ const Programs = () => {
       alert(result.message || (editingProgram ? '编辑成功' : '添加成功'));
       setModalOpen(false);
       loadFilterOptions();
+      loadPrograms(curPage);
     } else {
       alert(result.message || '操作失败');
     }
@@ -304,6 +362,7 @@ const Programs = () => {
       if (result.success) {
         alert(result.message || '删除成功');
         loadFilterOptions();
+        loadPrograms(curPage);
       } else {
         alert(result.message || '删除失败');
       }
@@ -386,6 +445,79 @@ const Programs = () => {
             {(filterRegYear || filterMajorId || filterSchool) ? '未找到匹配的专业' : '暂无数据'}
           </div>
         )}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 0',
+        fontSize: '14px',
+        color: '#64748b'
+      }}>
+        <span>共 {total} 条记录，第 {curPage}/{totalPages} 页</span>
+        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+          <button
+            onClick={() => handlePageChange(1)}
+            disabled={curPage === 1}
+            style={{
+              padding: '6px 10px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              background: curPage === 1 ? '#f1f5f9' : 'white',
+              color: curPage === 1 ? '#94a3b8' : '#334155',
+              cursor: curPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            首页
+          </button>
+          <button
+            onClick={() => handlePageChange(curPage - 1)}
+            disabled={curPage === 1}
+            style={{
+              padding: '6px 10px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              background: curPage === 1 ? '#f1f5f9' : 'white',
+              color: curPage === 1 ? '#94a3b8' : '#334155',
+              cursor: curPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            上一页
+          </button>
+          <button
+            onClick={() => handlePageChange(curPage + 1)}
+            disabled={curPage >= totalPages}
+            style={{
+              padding: '6px 10px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              background: curPage >= totalPages ? '#f1f5f9' : 'white',
+              color: curPage >= totalPages ? '#94a3b8' : '#334155',
+              cursor: curPage >= totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            下一页
+          </button>
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={curPage >= totalPages}
+            style={{
+              padding: '6px 10px',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              background: curPage >= totalPages ? '#f1f5f9' : 'white',
+              color: curPage >= totalPages ? '#94a3b8' : '#334155',
+              cursor: curPage >= totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            末页
+          </button>
+        </div>
       </div>
 
       <Modal
@@ -648,6 +780,110 @@ const Programs = () => {
                       <div style={{ display: 'flex', alignItems: 'end' }}>
                         <button
                           onClick={() => handleRemoveCompulsorySubject(index)}
+                          style={{
+                            padding: '8px 16px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          删除此组
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '14px', fontWeight: '500' }}>计分非必选科目</label>
+                <button
+                  onClick={handleAddElectiveSubject}
+                  style={{
+                    padding: '6px 12px',
+                    background: '#6366f1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  + 添加非必选科目组
+                </button>
+              </div>
+
+              {formData.electiveSubjects.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                  无计分非必选科目
+                </div>
+              ) : (
+                formData.electiveSubjects.map((subject, index) => (
+                  <div key={index} style={{
+                    padding: '16px',
+                    background: '#eef2ff',
+                    border: '1px solid #c7d2fe',
+                    borderRadius: '8px',
+                    marginBottom: '12px'
+                  }}>
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: '500', marginBottom: '8px', display: 'block' }}>
+                        非必选科目列表
+                      </label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                        {subject.subjectAliasList.map((alias, aliasIndex) => (
+                          <span
+                            key={aliasIndex}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '4px 10px',
+                              background: '#e0e7ff',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              color: '#3730a3'
+                            }}
+                          >
+                            {SUBJECT_OPTIONS.find(o => o.value === alias)?.label || alias}
+                            <button
+                              onClick={() => handleRemoveElectiveAlias(index, aliasIndex)}
+                              style={{
+                                marginLeft: '6px',
+                                background: 'none',
+                                border: 'none',
+                                color: '#3730a3',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                padding: '0'
+                              }}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <Select
+                        value=""
+                        onChange={(v) => handleElectiveAliasChange(index, v)}
+                        options={SUBJECT_OPTIONS.filter(o => !subject.subjectAliasList.includes(o.value))}
+                        placeholder="+ 添加科目"
+                        searchable={true}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <Input
+                        label="权重系数"
+                        value={subject.subjectWeight}
+                        onChange={(v) => handleElectiveSubjectChange(index, 'subjectWeight', v)}
+                        placeholder="如：1.5"
+                      />
+                      <div style={{ display: 'flex', alignItems: 'end' }}>
+                        <button
+                          onClick={() => handleRemoveElectiveSubject(index)}
                           style={{
                             padding: '8px 16px',
                             background: '#ef4444',
