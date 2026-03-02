@@ -1,6 +1,6 @@
 import { GRADE_SCORES, SUBJECT_ALIAS_MAP } from '../constants/subjects';
 
-const API_PREFIX = '/jupas-backend';
+const API_PREFIX = '/api';
 
 const jsonRequest = async (path, options = {}) => {
   try {

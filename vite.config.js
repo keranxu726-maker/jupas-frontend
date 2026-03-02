@@ -7,8 +7,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/jupas-backend': {
-        target: 'http://121.40.28.153',
+      '/api': {
+        target: 'http://121.40.28.153:8080',
         changeOrigin: true
       }
     }
