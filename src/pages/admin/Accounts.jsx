@@ -296,7 +296,7 @@ const Accounts = () => {
               <strong>科目别名参考：</strong><br/>
               bio=生物, che=化学, phy=物理, bafs=商科, eco=经济, geo=地理, hist=历史, ict=信息科技,
               chist=中国历史, clit=中国文学, elit=英国文学, music=音乐, vart=视觉艺术, dat=设计与应用科技,
-              ers=伦理与宗教, tour=旅游, hmsc=健康管理, pedu=体育, m1m2=数学延伸
+              ers=伦理与宗教, tour=旅游, hmsc=健康管理, pedu=体育, m1=数学延伸M1, m2=数学延伸M2
             </p>
           </div>
 
