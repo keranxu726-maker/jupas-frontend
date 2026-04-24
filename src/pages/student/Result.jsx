@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import StudentTabs from '../../components/StudentTabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Select from '../../components/Select';
 import { addFavoriteProgram, cancelFavoriteProgram, getFavoritePrograms } from '../../utils/api';
 import './Result.css';
 
@@ -18,33 +19,125 @@ const getSortedYears = (...maps) => {
   return Array.from(yearSet).sort((a, b) => Number(a) - Number(b));
 };
 
-// 计算匹配度百分比
-const calcMatchRate = (totalScore, middleScore, lowScore) => {
-  if (!middleScore || !lowScore || typeof middleScore !== 'object') return null;
-  const years = Object.keys(middleScore).sort((a, b) => Number(b) - Number(a));
-  if (years.length === 0) return null;
-  const latestYear = years[0];
-  const mid = middleScore[latestYear];
-  const low = lowScore?.[latestYear];
-  if (mid == null || low == null) return null;
+// 计算专业匹配度
+// 计算专业匹配度
+const getMatchLevel = (totalScore, middleScore, lowScore, heightScore) => {
+  if (!middleScore && !lowScore && !heightScore) return null;
+  
+  const allScores = [middleScore, lowScore, heightScore].filter(s => s && typeof s === 'object');
+  if (allScores.length === 0) return null;
+  
+  // 获取所有年份并排序（从新到旧）
+  const years = new Set();
+  allScores.forEach(score => {
+    Object.keys(score).forEach(k => years.add(k));
+  });
+  
+  const sortedYears = Array.from(years).sort((a, b) => Number(b) - Number(a));
+  if (sortedYears.length === 0) return null;
 
-  const range = mid - low;
-  if (range <= 0) {
-    return totalScore >= mid ? 99 : Math.max(0, Math.round((totalScore / mid) * 50));
+  // 从最新年份开始查找第一个有数据的年份
+  let latestValidYear = null;
+  for (const year of sortedYears) {
+    const high = heightScore?.[year];
+    const mid = middleScore?.[year];
+    const low = lowScore?.[year];
+    
+    if (high != null || mid != null || low != null) {
+      latestValidYear = year;
+      break;
+    }
   }
-  const diff = totalScore - low;
-  if (diff < 0) return Math.max(0, Math.round(15 + (diff / low) * 15));
-  const ratio = diff / (range * 2);
-  return Math.min(99, Math.max(0, Math.round(15 + ratio * 84)));
+
+  if (!latestValidYear) return null;
+
+  const high = heightScore?.[latestValidYear];
+  const mid = middleScore?.[latestValidYear];
+  const low = lowScore?.[latestValidYear];
+
+  if (totalScore == null) return null;
+
+  // 根据可用的数据进行判断
+  if (high != null && totalScore > high) {
+    return { level: 'excellent', color: '#10B981', label: '优秀' };
+  }
+  
+  // 当上四分位缺失时，只看中位数和下四分位
+  if (high == null && mid != null && low != null) {
+    if (totalScore > mid) {
+      return { level: 'good', color: '#3B82F6', label: '良好' };
+    } else if (totalScore > low) {
+      return { level: 'medium', color: '#F59E0B', label: '中等' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+  
+  // 当中位数缺失时，只看上四分位和下四分位
+  if (mid == null && high != null && low != null) {
+    if (totalScore > high) {
+      return { level: 'excellent', color: '#10B981', label: '优秀' };
+    } else if (totalScore > low) {
+      return { level: 'good', color: '#3B82F6', label: '良好' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+  
+  // 当下四分位缺失时，只看上四分位和中位数
+  if (low == null && high != null && mid != null) {
+    if (totalScore > high) {
+      return { level: 'excellent', color: '#10B981', label: '优秀' };
+    } else if (totalScore > mid) {
+      return { level: 'good', color: '#3B82F6', label: '良好' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+  
+  // 当只有中位数存在时
+  if (high == null && mid != null && low == null) {
+    if (totalScore > mid) {
+      return { level: 'good', color: '#3B82F6', label: '良好' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+  
+  // 当只有下四分位存在时
+  if (high == null && mid == null && low != null) {
+    if (totalScore > low) {
+      return { level: 'medium', color: '#F59E0B', label: '中等' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+  
+  // 当只有上四分位存在时
+  if (high != null && mid == null && low == null) {
+    if (totalScore > high) {
+      return { level: 'excellent', color: '#10B981', label: '优秀' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
+  }
+
+  // 默认情况：三个都为空
+  return { level: 'unknown', color: '#94a3b8', label: '未知' };
 };
 
-const getMatchColor = (rate) => {
-  if (rate >= 85) return '#10B981';
-  if (rate >= 60) return '#3B82F6';
-  if (rate >= 40) return '#F59E0B';
-  if (rate >= 15) return '#F97316';
-  return '#EF4444';
-};
+
+const SCHOOL_OPTIONS = [
+  { value: 'HKU', label: '香港大学 (HKU)' },
+  { value: 'CUHK', label: '香港中文大学 (CUHK)' },
+  { value: 'HKUST', label: '香港科技大学 (HKUST)' },
+  { value: 'PolyU', label: '香港理工大学 (PolyU)' },
+  { value: 'CityU', label: '香港城市大学 (CityU)' },
+  { value: 'HKBU', label: '香港浸会大学 (HKBU)' },
+  { value: 'LingnanU', label: '岭南大学 (LingnanU)' },
+  { value: 'EdUHK', label: '香港教育大学 (EdUHK)' },
+  { value: 'HKMU', label: '香港都会大学 (HKMU)' },
+];
 
 const Result = () => {
   const location = useLocation();
@@ -77,13 +170,13 @@ const Result = () => {
   useEffect(() => {
     let filtered = programs;
     if (schoolFilter) {
-      filtered = filtered.filter(p =>
-        p.school.toLowerCase().includes(schoolFilter.toLowerCase())
-      );
+      filtered = filtered.filter(p => p.school === schoolFilter);
     }
     if (programFilter) {
+      const filterLower = programFilter.toLowerCase();
       filtered = filtered.filter(p =>
-        p.program.toLowerCase().includes(programFilter.toLowerCase())
+        p.program.toLowerCase().includes(filterLower) ||
+        p.id.toLowerCase().includes(filterLower)
       );
     }
     setFilteredPrograms(filtered);
@@ -151,7 +244,13 @@ const Result = () => {
           )}
 
           <div className="filter-section">
-            <Input placeholder="筛选学校" value={schoolFilter} onChange={setSchoolFilter} />
+            <Select
+              placeholder="筛选学校"
+              value={schoolFilter}
+              onChange={setSchoolFilter}
+              options={SCHOOL_OPTIONS}
+              searchable={true}
+            />
             <Input placeholder="筛选专业" value={programFilter} onChange={setProgramFilter} />
           </div>
 
@@ -167,24 +266,32 @@ const Result = () => {
           ) : (
             <div className="programs-list">
               {filteredPrograms.map(program => {
-                const matchRate = calcMatchRate(program.totalScore, program.middleScore, program.lowScore);
-                const matchColor = matchRate != null ? getMatchColor(matchRate) : '#94a3b8';
+                const matchInfo = getMatchLevel(program.totalScore, program.middleScore, program.lowScore, program.heightScore);
+                const matchColor = matchInfo ? matchInfo.color : '#94a3b8';
                 const scoreYears = getSortedYears(program.heightScore, program.middleScore, program.lowScore);
                 const admissionYears = getSortedYears(program.admissionCount);
-                const allYears = getSortedYears(program.heightScore, program.middleScore, program.lowScore, program.admissionCount);
+                const allYears = getSortedYears(program.heightScore, program.middleScore, program.lowScore, program.admissionCount, program.yearToScore);
 
                 return (
                   <div key={program.id} className="rc-card">
                     {/* 顶栏：学校 + 匹配度 + 收藏 */}
-                    <div className="rc-top">
+                     <div className="rc-top">
                       <div className="rc-school">{program.school}</div>
-                      {matchRate != null && (
+                      {matchInfo && (
                         <div className="rc-match">
-                          <span className="rc-match-label">专业匹配度</span>
+                          <span className="rc-match-label">录取概率</span>
                           <div className="rc-match-bar">
-                            <div className="rc-match-fill" style={{ width: `${matchRate}%`, background: matchColor }} />
+                            <div 
+                              className="rc-match-fill" 
+                              style={{ 
+                                width: matchInfo.level === 'excellent' ? '100%' : 
+                                       matchInfo.level === 'good' ? '75%' : 
+                                       matchInfo.level === 'medium' ? '50%' : '25%', 
+                                background: matchColor 
+                              }} 
+                            />
                           </div>
-                          <span className="rc-match-value" style={{ color: matchColor }}>{matchRate}%</span>
+                          <span className="rc-match-value" style={{ color: matchColor }}>{matchInfo.label}</span>
                         </div>
                       )}
                       <button
@@ -205,7 +312,7 @@ const Result = () => {
                     {program.totalScore != null && (
                       <div className="rc-total-score">
                         <span className="rc-total-score-label">总分</span>
-                        <span className="rc-total-score-value">{program.totalScore.toFixed(1)}</span>
+                        <span className="rc-total-score-value">{program.totalScore.toFixed(2)}</span>
                       </div>
                     )}
 
@@ -227,13 +334,21 @@ const Result = () => {
                         allYears.map(year => (
                           <div key={year} className="rc-tag rc-tag-score">
                             <span className="rc-tag-label">{year}年计分</span>
-                            <span className="rc-tag-value">{program.totalScore != null ? program.totalScore.toFixed(1) : '-'}</span>
+                            <span className="rc-tag-value">
+                              {program.yearToScore?.[year] != null 
+                                ? program.yearToScore[year].toFixed(2) 
+                                : '-'}
+                            </span>
                           </div>
                         ))
                       ) : (
                         <div className="rc-tag rc-tag-score">
                           <span className="rc-tag-label">计分</span>
-                          <span className="rc-tag-value">{program.totalScore != null ? program.totalScore.toFixed(1) : '-'}</span>
+                          <span className="rc-tag-value">
+                            {program.totalScore != null 
+                              ? program.totalScore.toFixed(2) 
+                              : '-'}
+                          </span>
                         </div>
                       )}
                     </div>

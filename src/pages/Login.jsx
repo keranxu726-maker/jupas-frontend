@@ -8,8 +8,8 @@ import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('gangan');
-  const [password, setPassword] = useState('hajdsfgdfj#$@');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 

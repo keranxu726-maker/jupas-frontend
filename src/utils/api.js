@@ -132,6 +132,7 @@ export const calculatePrograms = async (grades) => {
       majorDetailLink: major.majorDetailLink,
       totalScore: item.totalScore,
       totalSubject: item.totalSubject,
+      yearToScore: item.yearToScore,
       heightScore: major.heightScore,
       middleScore: major.middleScore,
       lowScore: major.lowScore,
