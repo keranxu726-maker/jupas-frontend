@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import StudentTabs from '../../components/StudentTabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import Select from '../../components/Select';
 import { addFavoriteProgram, cancelFavoriteProgram, getFavoritePrograms } from '../../utils/api';
 import './Result.css';
 
@@ -19,7 +18,6 @@ const getSortedYears = (...maps) => {
   return Array.from(yearSet).sort((a, b) => Number(a) - Number(b));
 };
 
-// 计算专业匹配度
 // 计算专业匹配度
 const getMatchLevel = (totalScore, middleScore, lowScore, heightScore) => {
   if (!middleScore && !lowScore && !heightScore) return null;
@@ -60,6 +58,17 @@ const getMatchLevel = (totalScore, middleScore, lowScore, heightScore) => {
   // 根据可用的数据进行判断
   if (high != null && totalScore > high) {
     return { level: 'excellent', color: '#10B981', label: '优秀' };
+  }
+
+  // 三个分位数都存在时，依次按上四分位、中位数、下四分位判断
+  if (high != null && mid != null && low != null) {
+    if (totalScore > mid) {
+      return { level: 'good', color: '#3B82F6', label: '良好' };
+    } else if (totalScore > low) {
+      return { level: 'medium', color: '#F59E0B', label: '中等' };
+    } else {
+      return { level: 'low', color: '#EF4444', label: '较低' };
+    }
   }
   
   // 当上四分位缺失时，只看中位数和下四分位
@@ -127,17 +136,62 @@ const getMatchLevel = (totalScore, middleScore, lowScore, heightScore) => {
 };
 
 
-const SCHOOL_OPTIONS = [
-  { value: 'HKU', label: '香港大学 (HKU)' },
-  { value: 'CUHK', label: '香港中文大学 (CUHK)' },
-  { value: 'HKUST', label: '香港科技大学 (HKUST)' },
-  { value: 'PolyU', label: '香港理工大学 (PolyU)' },
-  { value: 'CityU', label: '香港城市大学 (CityU)' },
-  { value: 'HKBU', label: '香港浸会大学 (HKBU)' },
-  { value: 'LingnanU', label: '岭南大学 (LingnanU)' },
-  { value: 'EdUHK', label: '香港教育大学 (EdUHK)' },
-  { value: 'HKMU', label: '香港都会大学 (HKMU)' },
+const SCHOOL_ORDER = [
+  '香港大学',
+  '香港中文大学',
+  '香港科技大学',
+  '香港城市大学',
+  '香港理工大学',
+  '香港浸会大学',
+  '香港教育大学',
+  '岭南大学',
+  '香港都会大学',
+  'SSSDP',
 ];
+
+const SCHOOL_KEYWORDS = [
+  { key: '香港大学', aliases: ['香港大学', 'HKU'] },
+  { key: '香港中文大学', aliases: ['香港中文大学', 'CUHK'] },
+  { key: '香港科技大学', aliases: ['香港科技大学', 'HKUST'] },
+  { key: '香港城市大学', aliases: ['香港城市大学', 'CityU'] },
+  { key: '香港理工大学', aliases: ['香港理工大学', 'PolyU'] },
+  { key: '香港浸会大学', aliases: ['香港浸会大学', 'HKBU'] },
+  { key: '香港教育大学', aliases: ['香港教育大学', 'EdUHK'] },
+  { key: '岭南大学', aliases: ['岭南大学', 'LingnanU'] },
+  { key: '香港都会大学', aliases: ['香港都会大学', 'HKMU'] },
+  { key: 'SSSDP', aliases: ['SSSDP'] },
+];
+
+const getSchoolKey = (school) => {
+  const schoolText = school || '';
+  const matched = SCHOOL_KEYWORDS.find(item =>
+    item.aliases.some(alias => schoolText.includes(alias))
+  );
+  return matched?.key || school;
+};
+
+const getMatchRank = (program) => {
+  const matchInfo = getMatchLevel(
+    program.totalScore,
+    program.middleScore,
+    program.lowScore,
+    program.heightScore
+  );
+  const rankMap = {
+    excellent: 4,
+    good: 3,
+    medium: 2,
+    low: 1,
+    unknown: 0,
+  };
+  return rankMap[matchInfo?.level] ?? -1;
+};
+
+const sortByAdmissionChance = (a, b) => {
+  const rankDiff = getMatchRank(b) - getMatchRank(a);
+  if (rankDiff !== 0) return rankDiff;
+  return (b.totalScore ?? 0) - (a.totalScore ?? 0);
+};
 
 const Result = () => {
   const location = useLocation();
@@ -148,7 +202,48 @@ const Result = () => {
   const [programFilter, setProgramFilter] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [favLoading, setFavLoading] = useState(new Set());
-  const [filteredPrograms, setFilteredPrograms] = useState(programs);
+  const [expandedProgramIds, setExpandedProgramIds] = useState(new Set());
+  const keywordFilteredPrograms = useMemo(() => {
+    if (!programFilter) return programs;
+
+    const filterLower = programFilter.toLowerCase();
+    return programs.filter(p =>
+      (p.program || '').toLowerCase().includes(filterLower) ||
+      (p.id || '').toLowerCase().includes(filterLower)
+    );
+  }, [programFilter, programs]);
+
+  const schoolFilters = useMemo(() => {
+    const counts = keywordFilteredPrograms.reduce((acc, program) => {
+      const school = program.school || '未知学校';
+      acc.set(school, (acc.get(school) || 0) + 1);
+      return acc;
+    }, new Map());
+
+    return Array.from(counts.entries())
+      .map(([school, count]) => ({
+        value: school,
+        label: school,
+        count,
+      }))
+      .sort((a, b) => {
+        const aIndex = SCHOOL_ORDER.indexOf(getSchoolKey(a.value));
+        const bIndex = SCHOOL_ORDER.indexOf(getSchoolKey(b.value));
+        if (aIndex !== -1 || bIndex !== -1) {
+          return (aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex) -
+            (bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex);
+        }
+        return a.label.localeCompare(b.label, 'zh-Hans-CN');
+      });
+  }, [keywordFilteredPrograms]);
+
+  const filteredPrograms = useMemo(() => {
+    const filtered = schoolFilter
+      ? keywordFilteredPrograms.filter(p => p.school === schoolFilter)
+      : keywordFilteredPrograms;
+
+    return [...filtered].sort(sortByAdmissionChance);
+  }, [schoolFilter, keywordFilteredPrograms]);
 
   useEffect(() => {
     loadFavorites();
@@ -168,19 +263,10 @@ const Result = () => {
   }, [location.state, navigate]);
 
   useEffect(() => {
-    let filtered = programs;
-    if (schoolFilter) {
-      filtered = filtered.filter(p => p.school === schoolFilter);
+    if (schoolFilter && !schoolFilters.some(item => item.value === schoolFilter)) {
+      setSchoolFilter('');
     }
-    if (programFilter) {
-      const filterLower = programFilter.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.program.toLowerCase().includes(filterLower) ||
-        p.id.toLowerCase().includes(filterLower)
-      );
-    }
-    setFilteredPrograms(filtered);
-  }, [schoolFilter, programFilter, programs]);
+  }, [schoolFilter, schoolFilters]);
 
   const handleToggleFavorite = async (majorId) => {
     if (favLoading.has(majorId)) return;
@@ -197,6 +283,18 @@ const Result = () => {
     setFavLoading(prev => {
       const next = new Set(prev);
       next.delete(majorId);
+      return next;
+    });
+  };
+
+  const toggleProgramDetails = (programId) => {
+    setExpandedProgramIds(prev => {
+      const next = new Set(prev);
+      if (next.has(programId)) {
+        next.delete(programId);
+      } else {
+        next.add(programId);
+      }
       return next;
     });
   };
@@ -244,14 +342,30 @@ const Result = () => {
           )}
 
           <div className="filter-section">
-            <Select
-              placeholder="筛选学校"
-              value={schoolFilter}
-              onChange={setSchoolFilter}
-              options={SCHOOL_OPTIONS}
-              searchable={true}
-            />
             <Input placeholder="筛选专业" value={programFilter} onChange={setProgramFilter} />
+          </div>
+
+          <div className="school-filter-panel" aria-label="按学校筛选专业">
+            <button
+              type="button"
+              className={`school-filter-chip ${schoolFilter === '' ? 'active' : ''}`}
+              onClick={() => setSchoolFilter('')}
+            >
+              <span>可报专业</span>
+              <strong>{keywordFilteredPrograms.length}</strong>
+            </button>
+            {schoolFilters.map(item => (
+              <button
+                key={item.value}
+                type="button"
+                className={`school-filter-chip ${schoolFilter === item.value ? 'active' : ''}`}
+                onClick={() => setSchoolFilter(item.value)}
+                title={item.value}
+              >
+                <span>{item.label}</span>
+                <strong>{item.count}</strong>
+              </button>
+            ))}
           </div>
 
           <div className="result-count">
@@ -271,131 +385,160 @@ const Result = () => {
                 const scoreYears = getSortedYears(program.heightScore, program.middleScore, program.lowScore);
                 const admissionYears = getSortedYears(program.admissionCount);
                 const allYears = getSortedYears(program.heightScore, program.middleScore, program.lowScore, program.admissionCount, program.yearToScore);
+                const isExpanded = expandedProgramIds.has(program.id);
 
                 return (
-                  <div key={program.id} className="rc-card">
-                    {/* 顶栏：学校 + 匹配度 + 收藏 */}
-                     <div className="rc-top">
-                      <div className="rc-school">{program.school}</div>
+                  <div key={program.id} className={`rc-card ${isExpanded ? 'expanded' : ''}`}>
+                    <div
+                      className="rc-summary"
+                      onClick={() => toggleProgramDetails(program.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          toggleProgramDetails(program.id);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
+                    >
+                      <div className="rc-summary-main">
+                        <div className="rc-summary-meta">
+                          <span className="rc-school">{program.school}</span>
+                          <span className="rc-id">ID: {program.id}</span>
+                        </div>
+                        <div className="rc-title">{program.program}</div>
+                      </div>
+
+                      <div className="rc-summary-score">
+                        {program.totalScore != null && (
+                          <div className="rc-total-score">
+                            <span className="rc-total-score-label">总分</span>
+                            <span className="rc-total-score-value">{program.totalScore.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+
                       {matchInfo && (
                         <div className="rc-match">
                           <span className="rc-match-label">录取概率</span>
                           <div className="rc-match-bar">
-                            <div 
-                              className="rc-match-fill" 
-                              style={{ 
-                                width: matchInfo.level === 'excellent' ? '100%' : 
-                                       matchInfo.level === 'good' ? '75%' : 
-                                       matchInfo.level === 'medium' ? '50%' : '25%', 
-                                background: matchColor 
-                              }} 
+                            <div
+                              className="rc-match-fill"
+                              style={{
+                                width: matchInfo.level === 'excellent' ? '100%' :
+                                       matchInfo.level === 'good' ? '75%' :
+                                       matchInfo.level === 'medium' ? '50%' : '25%',
+                                background: matchColor
+                              }}
                             />
                           </div>
                           <span className="rc-match-value" style={{ color: matchColor }}>{matchInfo.label}</span>
                         </div>
                       )}
-                      <button
-                        className={`favorite-btn ${favorites.includes(program.id) ? 'favorited' : ''}`}
-                        disabled={favLoading.has(program.id)}
-                        onClick={() => handleToggleFavorite(program.id)}
-                        style={favLoading.has(program.id) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                      >
-                        {favLoading.has(program.id) ? '...' : favorites.includes(program.id) ? '★' : '☆'}
-                      </button>
+
+                      <div className="rc-summary-actions">
+                        <button
+                          type="button"
+                          className={`favorite-btn ${favorites.includes(program.id) ? 'favorited' : ''}`}
+                          disabled={favLoading.has(program.id)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleToggleFavorite(program.id);
+                          }}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          style={favLoading.has(program.id) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
+                          {favLoading.has(program.id) ? '...' : favorites.includes(program.id) ? '★' : '☆'}
+                        </button>
+                        <span className="rc-expand-indicator">{isExpanded ? '收起' : '展开'}</span>
+                      </div>
                     </div>
 
-                    {/* 专业名 + ID */}
-                    <div className="rc-title">{program.program}</div>
-                    <div className="rc-id">ID: {program.id}</div>
-
-                    {/* 总分 */}
-                    {program.totalScore != null && (
-                      <div className="rc-total-score">
-                        <span className="rc-total-score-label">总分</span>
-                        <span className="rc-total-score-value">{program.totalScore.toFixed(2)}</span>
-                      </div>
-                    )}
-
-                    {/* 招生人数（多年度标签） */}
-                    {admissionYears.length > 0 && (
-                      <div className="rc-row rc-admission">
-                        {admissionYears.map(year => (
-                          <div key={year} className="rc-tag rc-tag-admission">
-                            <span className="rc-tag-label">{year}年招生人数</span>
-                            <span className="rc-tag-value">{program.admissionCount[year]}人</span>
+                    {isExpanded && (
+                      <div className="rc-details">
+                        {/* 招生人数（多年度标签） */}
+                        {admissionYears.length > 0 && (
+                          <div className="rc-row rc-admission">
+                            {admissionYears.map(year => (
+                              <div key={year} className="rc-tag rc-tag-admission">
+                                <span className="rc-tag-label">{year}年招生人数</span>
+                                <span className="rc-tag-value">{program.admissionCount[year]}人</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {/* 计算得分（多年度标签） */}
-                    <div className="rc-row rc-calc-row">
-                      {allYears.length > 0 ? (
-                        allYears.map(year => (
-                          <div key={year} className="rc-tag rc-tag-score">
-                            <span className="rc-tag-label">{year}年计分</span>
-                            <span className="rc-tag-value">
-                              {program.yearToScore?.[year] != null 
-                                ? program.yearToScore[year].toFixed(2) 
-                                : '-'}
+                        {/* 计算得分（多年度标签） */}
+                        <div className="rc-row rc-calc-row">
+                          {allYears.length > 0 ? (
+                            allYears.map(year => (
+                              <div key={year} className="rc-tag rc-tag-score">
+                                <span className="rc-tag-label">{year}年计分</span>
+                                <span className="rc-tag-value">
+                                  {program.yearToScore?.[year] != null
+                                    ? program.yearToScore[year].toFixed(2)
+                                    : '-'}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="rc-tag rc-tag-score">
+                              <span className="rc-tag-label">计分</span>
+                              <span className="rc-tag-value">
+                                {program.totalScore != null
+                                  ? program.totalScore.toFixed(2)
+                                  : '-'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 计分科目 */}
+                        {program.totalSubject && program.totalSubject.length > 0 && (
+                          <div className="rc-subjects">
+                            <span className="rc-subjects-label">计分科目：</span>
+                            <span className="rc-calc-tags">
+                              {Array.from(program.totalSubject).map(s => (
+                                <span key={s} className="rc-subject-tag">{s}</span>
+                              ))}
                             </span>
                           </div>
-                        ))
-                      ) : (
-                        <div className="rc-tag rc-tag-score">
-                          <span className="rc-tag-label">计分</span>
-                          <span className="rc-tag-value">
-                            {program.totalScore != null 
-                              ? program.totalScore.toFixed(2) 
-                              : '-'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        )}
 
-                    {/* 计分科目 */}
-                    {program.totalSubject && program.totalSubject.length > 0 && (
-                      <div className="rc-subjects">
-                        <span className="rc-subjects-label">计分科目：</span>
-                        <span className="rc-calc-tags">
-                          {Array.from(program.totalSubject).map(s => (
-                            <span key={s} className="rc-subject-tag">{s}</span>
-                          ))}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* 各年录取分数线 - 横向卡片 */}
-                    {scoreYears.length > 0 && (
-                      <div className="rc-score-cards">
-                        {scoreYears.map(year => (
-                          <div key={year} className="rc-score-card">
-                            <div className="rc-score-card-title">{year}年录取分数线</div>
-                            <div className="rc-score-card-body">
-                              <div className="rc-score-item">
-                                <span className="rc-score-item-label">上四分位</span>
-                                <span className="rc-score-item-value">{program.heightScore?.[year] ?? '-'}</span>
+                        {/* 各年录取分数线 - 横向卡片 */}
+                        {scoreYears.length > 0 && (
+                          <div className="rc-score-cards">
+                            {scoreYears.map(year => (
+                              <div key={year} className="rc-score-card">
+                                <div className="rc-score-card-title">{year}年录取分数线</div>
+                                <div className="rc-score-card-body">
+                                  <div className="rc-score-item">
+                                    <span className="rc-score-item-label">上四分位</span>
+                                    <span className="rc-score-item-value">{program.heightScore?.[year] ?? '-'}</span>
+                                  </div>
+                                  <div className="rc-score-item">
+                                    <span className="rc-score-item-label">中位数</span>
+                                    <span className="rc-score-item-value rc-score-mid">{program.middleScore?.[year] ?? '-'}</span>
+                                  </div>
+                                  <div className="rc-score-item">
+                                    <span className="rc-score-item-label">下四分位</span>
+                                    <span className="rc-score-item-value">{program.lowScore?.[year] ?? '-'}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="rc-score-item">
-                                <span className="rc-score-item-label">中位数</span>
-                                <span className="rc-score-item-value rc-score-mid">{program.middleScore?.[year] ?? '-'}</span>
-                              </div>
-                              <div className="rc-score-item">
-                                <span className="rc-score-item-label">下四分位</span>
-                                <span className="rc-score-item-value">{program.lowScore?.[year] ?? '-'}</span>
-                              </div>
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
 
-                    {/* 详情链接 */}
-                    {program.majorDetailLink && (
-                      <div className="rc-link">
-                        <a href={program.majorDetailLink} target="_blank" rel="noopener noreferrer">
-                          查看专业详情 →
-                        </a>
+                        {/* 详情链接 */}
+                        {program.majorDetailLink && (
+                          <div className="rc-link">
+                            <a href={program.majorDetailLink} target="_blank" rel="noopener noreferrer">
+                              查看专业详情 →
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -415,4 +558,3 @@ const Result = () => {
 };
 
 export default Result;
-
