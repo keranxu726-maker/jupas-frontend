@@ -4,7 +4,12 @@ import Navbar from '../../components/Navbar';
 import StudentTabs from '../../components/StudentTabs';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import { addFavoriteProgram, cancelFavoriteProgram, getFavoritePrograms } from '../../utils/api';
+import {
+  addFavoriteProgram,
+  cancelFavoriteProgram,
+  getFavoritePrograms,
+  queryMajorDetailByMajorId
+} from '../../utils/api';
 import './Result.css';
 
 // 从 Map<年份, 值> 获取排序后的年份列表
@@ -203,6 +208,9 @@ const Result = () => {
   const [favorites, setFavorites] = useState([]);
   const [favLoading, setFavLoading] = useState(new Set());
   const [expandedProgramIds, setExpandedProgramIds] = useState(new Set());
+  const [wayToCalByMajor, setWayToCalByMajor] = useState({});
+  const [wayToCalLoading, setWayToCalLoading] = useState(new Set());
+  const [wayToCalFailed, setWayToCalFailed] = useState(new Set());
   const keywordFilteredPrograms = useMemo(() => {
     if (!programFilter) return programs;
 
@@ -287,14 +295,41 @@ const Result = () => {
     });
   };
 
-  const toggleProgramDetails = (programId) => {
+  const toggleProgramDetails = async (programId) => {
+    const isExpanded = expandedProgramIds.has(programId);
     setExpandedProgramIds(prev => {
       const next = new Set(prev);
-      if (next.has(programId)) {
+      if (isExpanded) {
         next.delete(programId);
       } else {
         next.add(programId);
       }
+      return next;
+    });
+
+    // 收起、正在请求或已经成功加载时不重复调用接口
+    if (isExpanded || wayToCalLoading.has(programId) || wayToCalByMajor[programId]) return;
+
+    setWayToCalLoading(prev => new Set(prev).add(programId));
+    setWayToCalFailed(prev => {
+      const next = new Set(prev);
+      next.delete(programId);
+      return next;
+    });
+
+    const result = await queryMajorDetailByMajorId(programId);
+    if (result.success) {
+      setWayToCalByMajor(prev => ({
+        ...prev,
+        [programId]: result.data.wayToCal
+      }));
+    } else {
+      setWayToCalFailed(prev => new Set(prev).add(programId));
+    }
+
+    setWayToCalLoading(prev => {
+      const next = new Set(prev);
+      next.delete(programId);
       return next;
     });
   };
@@ -495,12 +530,15 @@ const Result = () => {
                         </div>
 
                         {/* 计分科目 */}
-                        {program.totalSubject && program.totalSubject.length > 0 && (
+                        {program.totalSubjectScore && Object.keys(program.totalSubjectScore).length > 0 && (
                           <div className="rc-subjects">
-                            <span className="rc-subjects-label">计分科目：</span>
+                            <span className="rc-subjects-label">各科加权得分：</span>
                             <span className="rc-calc-tags">
-                              {Array.from(program.totalSubject).map(s => (
-                                <span key={s} className="rc-subject-tag">{s}</span>
+                              {Object.entries(program.totalSubjectScore).map(([subject, score]) => (
+                                <span key={subject} className="rc-subject-tag">
+                                  <span className="rc-subject-name">{subject}</span>
+                                  <span className="rc-subject-score">{score ?? '-'}</span>
+                                </span>
                               ))}
                             </span>
                           </div>
@@ -509,25 +547,43 @@ const Result = () => {
                         {/* 各年录取分数线 - 横向卡片 */}
                         {scoreYears.length > 0 && (
                           <div className="rc-score-cards">
-                            {scoreYears.map(year => (
-                              <div key={year} className="rc-score-card">
-                                <div className="rc-score-card-title">{year}年录取分数线</div>
-                                <div className="rc-score-card-body">
-                                  <div className="rc-score-item">
-                                    <span className="rc-score-item-label">上四分位</span>
-                                    <span className="rc-score-item-value">{program.heightScore?.[year] ?? '-'}</span>
+                            {scoreYears.map(year => {
+                              const wayToCal = wayToCalByMajor[program.id]?.[year];
+                              const isWayToCalLoading = wayToCalLoading.has(program.id);
+                              const isWayToCalFailed = wayToCalFailed.has(program.id);
+
+                              return (
+                                <div key={year} className="rc-score-card">
+                                  <div className="rc-score-card-title">{year}年录取分数线</div>
+                                  <div className="rc-score-card-body">
+                                    <div className="rc-score-item">
+                                      <span className="rc-score-item-label">上四分位</span>
+                                      <span className="rc-score-item-value">{program.heightScore?.[year] ?? '-'}</span>
+                                    </div>
+                                    <div className="rc-score-item">
+                                      <span className="rc-score-item-label">中位数</span>
+                                      <span className="rc-score-item-value rc-score-mid">{program.middleScore?.[year] ?? '-'}</span>
+                                    </div>
+                                    <div className="rc-score-item">
+                                      <span className="rc-score-item-label">下四分位</span>
+                                      <span className="rc-score-item-value">{program.lowScore?.[year] ?? '-'}</span>
+                                    </div>
                                   </div>
-                                  <div className="rc-score-item">
-                                    <span className="rc-score-item-label">中位数</span>
-                                    <span className="rc-score-item-value rc-score-mid">{program.middleScore?.[year] ?? '-'}</span>
-                                  </div>
-                                  <div className="rc-score-item">
-                                    <span className="rc-score-item-label">下四分位</span>
-                                    <span className="rc-score-item-value">{program.lowScore?.[year] ?? '-'}</span>
+                                  <div className="rc-score-method">
+                                    <div className="rc-score-method-title">计分方式</div>
+                                    {isWayToCalLoading ? (
+                                      <div className="rc-score-method-empty">加载中...</div>
+                                    ) : isWayToCalFailed ? (
+                                      <div className="rc-score-method-empty">加载失败，收起后可重试</div>
+                                    ) : wayToCal != null && wayToCal !== '' ? (
+                                      <div className="rc-score-method-value">{wayToCal}</div>
+                                    ) : (
+                                      <div className="rc-score-method-empty">-</div>
+                                    )}
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
 

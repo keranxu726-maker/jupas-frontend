@@ -24,6 +24,36 @@ const CALCULATE_TYPE_OPTIONS = [
 
 const PAGE_SIZE = 30;
 
+const parseRemarkTags = (remark) => {
+  if (!remark || !remark.trim()) return [];
+
+  return remark.replace(/\r\n?/g, '\n').split('\n').reduce((tags, rawLine) => {
+    const line = rawLine.trim();
+    if (!line) return tags;
+
+    const halfWidthIndex = line.indexOf(':');
+    const fullWidthIndex = line.indexOf('：');
+    const separatorIndex = halfWidthIndex < 0
+      ? fullWidthIndex
+      : fullWidthIndex < 0
+        ? halfWidthIndex
+        : Math.min(halfWidthIndex, fullWidthIndex);
+
+    if (separatorIndex > 0 && separatorIndex < line.length - 1) {
+      const name = line.slice(0, separatorIndex).trim();
+      const content = line.slice(separatorIndex + 1).trim();
+      if (name && content) tags.push({ name, content });
+    }
+    return tags;
+  }, []);
+};
+
+const serializeRemarkTags = (tags) => (
+  tags.map(({ name, content }) => `${name}:${content}`).join('\n')
+);
+
+const createEmptyRemarkDraft = () => ({ type: 'wayToCal', customName: '', content: '' });
+
 const Programs = () => {
   const [programs, setPrograms] = useState([]);
   const [curPage, setCurPage] = useState(1);
@@ -35,6 +65,9 @@ const Programs = () => {
   const filterInitRef = useRef(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
+  const [remarkTags, setRemarkTags] = useState([]);
+  const [remarkDraft, setRemarkDraft] = useState(createEmptyRemarkDraft);
+  const [remarkError, setRemarkError] = useState('');
   const [formData, setFormData] = useState({
     majorId: '',
     majorName: '',
@@ -137,12 +170,18 @@ const Programs = () => {
 
   const handleAdd = () => {
     setEditingProgram(null);
+    setRemarkTags([]);
+    setRemarkDraft(createEmptyRemarkDraft());
+    setRemarkError('');
     setFormData(resetForm());
     setModalOpen(true);
   };
 
   const handleEdit = (program) => {
     setEditingProgram(program);
+    setRemarkTags(parseRemarkTags(program.remark));
+    setRemarkDraft(createEmptyRemarkDraft());
+    setRemarkError('');
     setFormData({
       id: program.dbId,
       majorId: program.id,
@@ -167,6 +206,9 @@ const Programs = () => {
 
   const handleCopy = (program) => {
     setEditingProgram(null);
+    setRemarkTags(parseRemarkTags(program.remark));
+    setRemarkDraft(createEmptyRemarkDraft());
+    setRemarkError('');
     setFormData({
       majorId: program.id + '-COPY',
       majorName: program.program,
@@ -311,6 +353,39 @@ const Programs = () => {
     { value: '7', label: '第7科' }
   ];
 
+  const handleAddRemarkTag = () => {
+    const name = remarkDraft.type === 'wayToCal'
+      ? 'wayToCal'
+      : remarkDraft.customName.trim();
+    const content = remarkDraft.content.trim();
+
+    if (!name || !content) {
+      setRemarkError(remarkDraft.type === 'other' && !name ? '请填写自定义属性名称' : '请填写属性内容');
+      return;
+    }
+    if (/[:：\r\n]/.test(name)) {
+      setRemarkError('属性名不能包含冒号或换行符');
+      return;
+    }
+    if (/[\r\n]/.test(content)) {
+      setRemarkError('属性内容不能包含换行符');
+      return;
+    }
+    if (remarkTags.some(tag => tag.name === name)) {
+      setRemarkError(`属性“${name}”已存在`);
+      return;
+    }
+
+    setRemarkTags(prev => [...prev, { name, content }]);
+    setRemarkDraft(createEmptyRemarkDraft());
+    setRemarkError('');
+  };
+
+  const handleRemoveRemarkTag = (index) => {
+    setRemarkTags(prev => prev.filter((_, tagIndex) => tagIndex !== index));
+    setRemarkError('');
+  };
+
   const handleSave = async () => {
     // 验证必填字段
     if (!formData.majorId || !formData.majorName || !formData.schoolName) {
@@ -332,8 +407,16 @@ const Programs = () => {
       }
     }
 
+    if (remarkDraft.customName.trim() || remarkDraft.content.trim()) {
+      const message = '备注属性还有未添加的内容，请先点击“添加”';
+      setRemarkError(message);
+      alert(message);
+      return;
+    }
+
     const majorData = {
       ...formData,
+      remark: serializeRemarkTags(remarkTags),
       heightScore: formData.heightScore ? parseFloat(formData.heightScore) : null,
       middleScore: formData.middleScore ? parseFloat(formData.middleScore) : null,
       lowScore: formData.lowScore ? parseFloat(formData.lowScore) : null
@@ -607,13 +690,93 @@ const Programs = () => {
               style={{ marginBottom: '16px' }}
             />
 
-            <Input
-              label="备注"
-              value={formData.remark}
-              onChange={(v) => setFormData({ ...formData, remark: v })}
-              placeholder="备注信息"
-              style={{ marginBottom: '0' }}
-            />
+            <div className="remark-field">
+              <label className="remark-label">备注属性</label>
+              <div className="remark-editor">
+                <div className="remark-attribute-control">
+                  <select
+                    className="remark-input remark-select"
+                    value={remarkDraft.type}
+                    onChange={(event) => {
+                      setRemarkDraft(current => ({
+                        ...current,
+                        type: event.target.value,
+                        customName: ''
+                      }));
+                      if (remarkError) setRemarkError('');
+                    }}
+                    aria-label="备注属性类型"
+                  >
+                    <option value="wayToCal">计分方式</option>
+                    <option value="other">其他</option>
+                  </select>
+                  {remarkDraft.type === 'other' && (
+                    <input
+                      className="remark-input"
+                      value={remarkDraft.customName}
+                      onChange={(event) => {
+                        setRemarkDraft(current => ({ ...current, customName: event.target.value }));
+                        if (remarkError) setRemarkError('');
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleAddRemarkTag();
+                        }
+                      }}
+                      placeholder="自定义属性名称"
+                      aria-label="自定义备注属性名"
+                    />
+                  )}
+                </div>
+                <input
+                  className="remark-input"
+                  value={remarkDraft.content}
+                  onChange={(event) => {
+                    setRemarkDraft(current => ({ ...current, content: event.target.value }));
+                    if (remarkError) setRemarkError('');
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleAddRemarkTag();
+                    }
+                  }}
+                  placeholder="内容（最多100个字描述），如 最佳5科"
+                  aria-label="备注属性内容"
+                />
+                <button
+                  type="button"
+                  className="remark-add-btn"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    handleAddRemarkTag();
+                  }}
+                  onClick={(event) => {
+                    // 键盘触发的 click 没有 pointerdown，detail 为 0
+                    if (event.detail === 0) handleAddRemarkTag();
+                  }}
+                >
+                  添加
+                </button>
+              </div>
+              {remarkError && <div className="remark-error">{remarkError}</div>}
+              <div className="remark-tags" aria-label="已添加的备注属性">
+                {remarkTags.map((tag, index) => (
+                  <span key={`${tag.name}-${index}`} className="remark-tag">
+                    <span>{tag.name === 'wayToCal' ? '计分方式' : tag.name}：{tag.content}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRemarkTag(index)}
+                      aria-label={`删除属性 ${tag.name}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {remarkTags.length === 0 && <span className="remark-empty">暂未添加属性</span>}
+              </div>
+            </div>
           </Section>
 
           {/* 2. 科目要求区 */}

@@ -131,7 +131,7 @@ export const calculatePrograms = async (grades) => {
       program: major.majorName,
       majorDetailLink: major.majorDetailLink,
       totalScore: item.totalScore,
-      totalSubject: item.totalSubject,
+      totalSubjectScore: item.totalSubjectScore || {},
       yearToScore: item.yearToScore,
       heightScore: major.heightScore,
       middleScore: major.middleScore,
@@ -189,6 +189,30 @@ export const cancelFavoriteProgram = async (majorId) => {
     body: JSON.stringify({ majorId })
   });
   return result;
+};
+
+// 根据专业 ID 查询最近三年的专业详情
+export const queryMajorDetailByMajorId = async (majorId) => {
+  if (!majorId) {
+    return { success: false, message: '专业 ID 不能为空' };
+  }
+
+  const result = await jsonRequest('/major/queryMajorDetailByMajorId', {
+    method: 'POST',
+    body: JSON.stringify({ majorId })
+  });
+
+  if (!result.success) {
+    return { success: false, message: result.message || '查询专业详情失败' };
+  }
+
+  return {
+    success: true,
+    data: {
+      majorId: result.data?.majorId || majorId,
+      wayToCal: result.data?.remarkTagMap?.wayToCal || {}
+    }
+  };
 };
 
 export const resetPassword = async (oldPassword, newPassword) => {

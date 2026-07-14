@@ -43,4 +43,146 @@
   background: var(--color-bg-light);
   transition: background 0.2s ease;
 }
+.remark-field {
+  margin-bottom: 0;
+}
 
+.remark-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.remark-editor {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(200px, 1.4fr) auto;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.remark-input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.remark-attribute-control {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.remark-attribute-control > * {
+  flex: 1;
+}
+
+.remark-select {
+  cursor: pointer;
+}
+
+.remark-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.remark-add-btn {
+  padding: 0 18px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remark-add-btn:hover {
+  filter: brightness(0.95);
+}
+
+.remark-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-height: 48px;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 9px;
+  background: #faf8ff;
+}
+
+.remark-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 7px 9px 7px 14px;
+  border: 1px solid #c4b5fd;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #4c1d95;
+  font-size: 13px;
+}
+
+.remark-tag > span {
+  overflow-wrap: anywhere;
+}
+
+.remark-tag button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(76, 29, 149, 0.1);
+  color: #6d28d9;
+  font-size: 15px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.remark-empty {
+  align-self: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.remark-help,
+.remark-error {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.remark-help {
+  color: var(--color-text-secondary);
+}
+
+.remark-error {
+  color: var(--color-danger);
+}
+
+@media (max-width: 768px) {
+  .remark-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .remark-attribute-control {
+    flex-direction: column;
+  }
+
+  .remark-add-btn {
+    min-height: 40px;
+  }
+}
