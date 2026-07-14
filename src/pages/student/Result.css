@@ -444,13 +444,25 @@
 }
 
 .rc-subject-tag {
-  display: inline-block;
-  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 5px 3px 10px;
   background: rgba(37, 99, 235, 0.1);
   color: var(--color-primary);
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+}
+
+.rc-subject-score {
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* 录取分数线 - 横向卡片 */
@@ -508,6 +520,31 @@
 .rc-score-item-value.rc-score-mid {
   color: var(--color-primary);
   font-weight: 700;
+}
+
+.rc-score-method {
+  padding: 10px 14px 12px;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.rc-score-method-title {
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.rc-score-method-value {
+  font-size: 12px;
+  color: var(--color-primary);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.rc-score-method-empty {
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 /* 详情链接 */
