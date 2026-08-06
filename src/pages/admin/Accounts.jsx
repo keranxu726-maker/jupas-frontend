@@ -3,14 +3,25 @@ import Button from '../../components/Button';
 import Input from '../../components/Input';
 import Modal from '../../components/Modal';
 import Select from '../../components/Select';
-import { createAccount, batchImportAccounts } from '../../utils/api';
+import { createAccount, batchImportAccounts, queryUsersByName, cancelUser } from '../../utils/api';
 import { ELECTIVE_SUBJECTS } from '../../constants/subjects';
 import './Accounts.css';
 
 const Accounts = () => {
-  const [activeTab, setActiveTab] = useState('student');
+
+  // 搜索和分页状态
+  const [searchName, setSearchName] = useState('');
+  const [userList, setUserList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [curPage, setCurPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPage, setTotalPage] = useState(0);
+  const pageSize = 10;
+
+  // 新增弹窗状态
   const [modalOpen, setModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [createRole, setCreateRole] = useState('student');
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -19,9 +30,55 @@ const Accounts = () => {
   const [excelFile, setExcelFile] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
 
+  // 注销确认状态
+  const [cancelTarget, setCancelTarget] = useState(null);
+
   const electiveOptions = ELECTIVE_SUBJECTS.map(s => ({ value: s, label: s }));
 
+  // 加载用户列表
+  const loadUsers = async (page = 1, name = searchName) => {
+    setLoading(true);
+    const result = await queryUsersByName(name, page, pageSize);
+    if (result.success) {
+      setUserList(result.data);
+      setTotalCount(result.totalCount);
+      setTotalPage(result.totalPage);
+      setCurPage(result.curPage);
+    }
+    setLoading(false);
+  };
+
+  const handleSearch = () => {
+    setCurPage(1);
+    loadUsers(1, searchName);
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  // 分页切换
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPage || page === curPage) return;
+    setCurPage(page);
+    loadUsers(page, searchName);
+  };
+
+  // 注销用户
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    const result = await cancelUser(cancelTarget.id);
+    if (result.success) {
+      alert(result.message || '注销成功');
+      setCancelTarget(null);
+      loadUsers(curPage, searchName);
+    } else {
+      alert(result.message || '注销失败');
+    }
+  };
+
   const handleAdd = () => {
+    setCreateRole('student');
     setFormData({
       username: '',
       password: '',
@@ -36,7 +93,7 @@ const Accounts = () => {
       return;
     }
 
-    if (activeTab === 'student' && formData.electiveSubjects.length === 0) {
+    if (createRole === 'student' && formData.electiveSubjects.length === 0) {
       alert('请至少选择1门选修科目');
       return;
     }
@@ -44,7 +101,7 @@ const Accounts = () => {
     const result = await createAccount({
       username: formData.username,
       password: formData.password,
-      role: activeTab,
+      role: createRole,
       electiveSubjects: formData.electiveSubjects
     });
 
@@ -56,6 +113,7 @@ const Accounts = () => {
         password: '',
         electiveSubjects: []
       });
+      loadUsers(curPage, searchName);
     } else {
       alert(result.message || '创建失败');
     }
@@ -95,10 +153,54 @@ const Accounts = () => {
         alert(result.message || '批量导入成功');
         setUploadModalOpen(false);
         setExcelFile(null);
+        loadUsers(curPage, searchName);
       }
     } else {
       alert(result.message || '批量导入失败');
     }
+  };
+
+  // 生成分页按钮
+  const renderPagination = () => {
+    if (totalPage <= 1) return null;
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, curPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPage, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return (
+      <div className="pagination">
+        <span className="pagination-info">共 {totalCount} 条记录，{totalPage} 页</span>
+        <button
+          className="pagination-btn"
+          disabled={curPage <= 1}
+          onClick={() => goToPage(curPage - 1)}
+        >
+          上一页
+        </button>
+        {pages.map(p => (
+          <button
+            key={p}
+            className={`pagination-btn ${p === curPage ? 'active' : ''}`}
+            onClick={() => goToPage(p)}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          className="pagination-btn"
+          disabled={curPage >= totalPage}
+          onClick={() => goToPage(curPage + 1)}
+        >
+          下一页
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -111,56 +213,121 @@ const Accounts = () => {
         </div>
       </div>
 
-      <div className="info-banner" style={{
-        background: '#fff3e0',
-        padding: '16px',
-        borderRadius: '8px',
-        marginBottom: '24px',
-        fontSize: '14px',
-        color: '#e65100',
-        lineHeight: '1.6'
-      }}>
-        <strong>功能说明：</strong>
-        <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-          <li>✅ 支持新增账号（单个创建）</li>
-          <li>✅ 支持Excel批量导入账号</li>
-          <li>❌ 后端暂不支持查询、编辑、删除用户功能</li>
-        </ul>
+      {/* 搜索栏 */}
+      <div className="search-bar">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="输入用户名搜索（支持模糊匹配）"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
+        />
+        <Button onClick={handleSearch}>🔍 搜索</Button>
       </div>
 
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === 'student' ? 'active' : ''}`}
-          onClick={() => setActiveTab('student')}
-        >
-          学生账号
-        </button>
-        <button
-          className={`tab ${activeTab === 'admin' ? 'active' : ''}`}
-          onClick={() => setActiveTab('admin')}
-        >
-          管理员账号
-        </button>
-      </div>
-
+      {/* 用户列表表格 */}
       <div className="accounts-table">
-        <div style={{
-          padding: '80px 20px',
-          textAlign: 'center',
-          color: '#999'
-        }}>
-          <p style={{ fontSize: '18px', marginBottom: '12px', color: '#666' }}>账号创建功能</p>
-          <p style={{ fontSize: '14px', marginBottom: '8px' }}>点击上方"新增账号"按钮创建单个账号</p>
-          <p style={{ fontSize: '14px' }}>或使用"Excel批量导入"功能批量创建账号</p>
-        </div>
+        {loading ? (
+          <div className="empty-table">加载中...</div>
+        ) : userList.length === 0 ? (
+          <div className="empty-table">暂无数据，请点击搜索查询或新增账号</div>
+        ) : (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: '80px' }}>用户ID</th>
+                  <th>用户名</th>
+                  <th style={{ width: '100px' }}>用户类型</th>
+                  <th>选修科目</th>
+                  <th style={{ width: '100px' }}>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userList.map(user => (
+                  <tr key={user.id}>
+                    <td>{user.id}</td>
+                    <td>{user.username}</td>
+                    <td>
+                      <span className={`role-tag ${user.role === 'admin' ? 'role-admin' : 'role-student'}`}>
+                        {user.role === 'admin' ? '管理员' : '学生'}
+                      </span>
+                    </td>
+                    <td>
+                      {user.electiveSubjectList && user.electiveSubjectList.length > 0
+                        ? user.electiveSubjectList.map((s, i) => (
+                            <span key={i} className="subject-tag">
+                              {s.name || s.alias}
+                            </span>
+                          ))
+                        : <span style={{ color: '#999' }}>—</span>
+                      }
+                    </td>
+                    <td>
+                      <button
+                        className="btn-cancel"
+                        onClick={() => setCancelTarget(user)}
+                        title="注销用户"
+                      >
+                        注销
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {renderPagination()}
+          </>
+        )}
       </div>
 
       {/* 新增账号弹窗 */}
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={`新增${activeTab === 'student' ? '学生' : '管理员'}账号`}
+        title={`新增${createRole === 'student' ? '学生' : '管理员'}账号`}
       >
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+            账号类型 *
+          </label>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+              border: `1.5px solid ${createRole === 'student' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              background: createRole === 'student' ? '#eff6ff' : '#fff'
+            }}>
+              <input
+                type="radio"
+                name="role"
+                value="student"
+                checked={createRole === 'student'}
+                onChange={() => setCreateRole('student')}
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+              <span style={{ fontSize: '14px' }}>学生</span>
+            </label>
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px', cursor: 'pointer',
+              border: `1.5px solid ${createRole === 'admin' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+              background: createRole === 'admin' ? '#eff6ff' : '#fff'
+            }}>
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={createRole === 'admin'}
+                onChange={() => setCreateRole('admin')}
+                style={{ accentColor: 'var(--color-primary)' }}
+              />
+              <span style={{ fontSize: '14px' }}>管理员</span>
+            </label>
+          </div>
+        </div>
+
         <Input
           label="账号名称 *"
           value={formData.username}
@@ -176,7 +343,7 @@ const Accounts = () => {
           placeholder="请输入登录密码"
         />
 
-        {activeTab === 'student' && (
+        {createRole === 'student' && (
           <div>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
               选修科目 *（至少选择1门）
@@ -355,6 +522,44 @@ const Accounts = () => {
           </Button>
           <Button type="primary" onClick={handleBatchImport}>
             开始导入
+          </Button>
+        </div>
+      </Modal>
+
+      {/* 注销确认弹窗 */}
+      <Modal
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        title="确认注销用户"
+      >
+        <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
+          确定要注销以下用户吗？此操作不可撤销。
+        </p>
+        {cancelTarget && (
+          <div style={{
+            padding: '16px',
+            background: '#fff3e0',
+            borderRadius: '8px',
+            marginBottom: '20px'
+          }}>
+            <p style={{ margin: '0 0 4px 0', fontSize: '14px' }}>
+              <strong>用户ID：</strong>{cancelTarget.id}
+            </p>
+            <p style={{ margin: 0, fontSize: '14px' }}>
+              <strong>用户名：</strong>{cancelTarget.username}
+            </p>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <Button type="secondary" onClick={() => setCancelTarget(null)}>
+            取消
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleConfirmCancel}
+            style={{ background: '#ef4444', borderColor: '#ef4444' }}
+          >
+            确认注销
           </Button>
         </div>
       </Modal>

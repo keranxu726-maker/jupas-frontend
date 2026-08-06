@@ -279,20 +279,68 @@ export const batchImportAccounts = async (file) => {
   return { success: true, message: '批量导入成功' };
 };
 
-// 后端暂不支持的接口（保留前端模拟数据）
-export const getAccounts = async (role) => {
-  // 后端没有提供用户列表接口
-  return { success: false, message: '后端暂不支持查询用户列表' };
+// 按名称查询用户（分页）
+export const queryUsersByName = async (name = '', curPage = 1, pageSize = 10) => {
+  try {
+    const res = await fetch(`${API_PREFIX}/users/queryByName`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, curPage, pageSize })
+    });
+
+    const data = await res.json();
+    if (data.code !== 0) {
+      return { success: false, message: data.msg || data.message || '查询用户列表失败' };
+    }
+
+    const pageResp = data.data || {};
+    const list = (pageResp.list || []).map(item => ({
+      id: item.userId,
+      username: item.userName,
+      role: (item.userType || '').toUpperCase() === 'ADMIN' ? 'admin' : 'student',
+      electiveSubjectList: item.electiveSubjectList || []
+    }));
+
+    return {
+      success: true,
+      data: list,
+      totalCount: pageResp.totalCount || 0,
+      totalPage: pageResp.totalPage || 0,
+      curPage: pageResp.curPage || curPage,
+      pageSize: pageResp.pageSize || pageSize
+    };
+  } catch (e) {
+    return { success: false, message: e.message || '网络错误' };
+  }
 };
 
 export const updateAccount = async (id, accountData) => {
-  // 后端没有提供编辑用户接口
   return { success: false, message: '后端暂不支持编辑用户' };
 };
 
-export const deleteAccount = async (id) => {
-  // 后端没有提供删除用户接口
-  return { success: false, message: '后端暂不支持删除用户' };
+// 注销用户
+export const cancelUser = async (userId) => {
+  try {
+    const formBody = new URLSearchParams();
+    formBody.append('userId', userId);
+
+    const res = await fetch(`${API_PREFIX}/users/cancelUser`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formBody.toString()
+    });
+
+    const data = await res.json();
+    if (data.code !== 0) {
+      return { success: false, message: data.msg || data.message || '注销用户失败' };
+    }
+
+    return { success: true, message: '用户已注销' };
+  } catch (e) {
+    return { success: false, message: e.message || '网络错误' };
+  }
 };
 
 // ==================== 专业管理接口 ====================
